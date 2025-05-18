@@ -82,6 +82,7 @@ class GLWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_3_Core {
   void DrawCube();
   void DrawQuad();
   void initializeGBufferTextures();
+  void DrawFloor();
 
  protected:
   /**

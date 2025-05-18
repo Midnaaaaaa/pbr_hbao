@@ -17,8 +17,8 @@
 namespace {
 
 const double kFieldOfView = 60;
-const double kZNear = 0.001;
-const double kZFar = 10;
+const double kZNear = 0.0001;
+const double kZFar = 20;
 
 const std::vector<std::vector<std::string>> kShaderFiles = {
     {"../shaders/phong.vert",        "../shaders/phong.frag"},
@@ -283,6 +283,63 @@ void GLWidget::DrawQuad(){
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
 }
+
+void GLWidget::DrawFloor(){
+    GLuint floorVAO = 0;
+    GLuint floorVBO_v = 0;
+    GLuint floorVBO_n = 0;
+    GLuint floorVBO_i = 0;
+
+
+    if (floorVAO == 0) {
+        float vertexs[] = {
+            -4.0f, -1.0f, -4.0f,
+            4.0f, -1.0f, -4.0f,
+            4.0f, -1.0f,  4.0f,
+            -4.0f, -1.0f,  4.0f
+        };
+
+        float normals[] = {
+            0.0f, 1.0f, 0.0f,
+            0.0f, 1.0f, 0.0f,
+            0.0f, 1.0f, 0.0f,
+            0.0f, 1.0f, 0.0f
+        };
+
+        // Indices for two triangles
+        unsigned int indices[] = {
+            0, 1, 2,
+            0, 2, 3
+        };
+
+        glGenVertexArrays(1, &floorVAO);
+        glGenBuffers(1, &floorVBO_v);
+        glGenBuffers(1, &floorVBO_n);
+        glGenBuffers(1, &floorVBO_i);
+
+        glBindVertexArray(floorVAO);
+
+        glBindBuffer(GL_ARRAY_BUFFER, floorVBO_v);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertexs), vertexs, GL_STATIC_DRAW);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+        glEnableVertexAttribArray(0);
+
+        glBindBuffer(GL_ARRAY_BUFFER, floorVBO_n);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(normals), normals, GL_STATIC_DRAW);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+        glEnableVertexAttribArray(1);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, floorVBO_i);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+        glBindVertexArray(0);
+    }
+    glBindVertexArray(floorVAO);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
+}
+
+
 
 void GLWidget::DrawCube(){
     static GLuint cubeVAO = 0;
@@ -891,7 +948,7 @@ void GLWidget::paintGL ()
                 glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-                int g_pass_shader = programs_.size()-3;
+                int g_pass_shader = 8;
                 programs_[g_pass_shader]->bind();
 
                 GLint projection_location, view_location, model_location,normal_matrix_location, color_map_location, using_color_map_location;
@@ -911,6 +968,8 @@ void GLWidget::paintGL ()
                 glUniform1i(color_map_location, 2);
                 glUniform1i(using_color_map_location, using_color_map);
 
+                DrawFloor();
+
                 glBindVertexArray(VAO);
                 glDrawElements(GL_TRIANGLES, mesh_->faces_.size(), GL_UNSIGNED_INT, (GLvoid*)0);
                 glBindVertexArray(0);
@@ -920,7 +979,7 @@ void GLWidget::paintGL ()
                 glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
                 glDisable(GL_DEPTH_TEST);
-                int shading_pass_shader = programs_.size()-2;
+                int shading_pass_shader = 9;
                 programs_[shading_pass_shader]->bind();
 
                 GLint gAlbedo_location, gNormal_location, gDepth_location, current_buffer_location, near_plane_location, far_plane_location;
@@ -950,7 +1009,7 @@ void GLWidget::paintGL ()
 
 
                 DrawQuad();
-
+                /*
                 int width = this->width();
                 int height = this->height();
                 // === Albedo ===
@@ -998,8 +1057,7 @@ void GLWidget::paintGL ()
                         uchar gray = static_cast<uchar>(std::clamp(norm * 255.0f, 0.0f, 255.0f));
                         depthImg.setPixelColor(x, height - y - 1, QColor(gray, gray, gray));
                     }
-                depthImg.save("C:/Users/polro/Desktop/depth.png");
-
+                depthImg.save("C:/Users/polro/Desktop/depth.png");*/
             }
             else{
                 glUniformMatrix4fv(projection_location, 1, GL_FALSE, &projection[0][0]);
