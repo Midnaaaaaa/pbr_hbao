@@ -83,6 +83,8 @@ DIST          = shaders/README.md \
 		shaders/prefilter.vert \
 		shaders/reflection.frag \
 		shaders/reflection.vert \
+		shaders/shading-pass.frag \
+		shaders/shading-pass.vert \
 		shaders/sky.frag \
 		shaders/sky.vert \
 		shaders/phong.frag \

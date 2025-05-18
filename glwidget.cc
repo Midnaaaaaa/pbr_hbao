@@ -17,8 +17,8 @@
 namespace {
 
 const double kFieldOfView = 60;
-const double kZNear = 0.0001;
-const double kZFar = 20;
+const double kZNear = 0.001;
+const double kZFar = 10;
 
 const std::vector<std::vector<std::string>> kShaderFiles = {
     {"../shaders/phong.vert",        "../shaders/phong.frag"},
@@ -113,8 +113,8 @@ GLWidget::GLWidget(QWidget *parent)
     width_(0.0),
     height_(0.0),
     currentShader_(0),
-    currentTexture_(0),
     fresnel_(0.2, 0.2, 0.2),
+    currentTexture_(0),
     skyVisible_(true),
     metalness_(0),
     roughness_(0),
@@ -923,11 +923,13 @@ void GLWidget::paintGL ()
                 int shading_pass_shader = programs_.size()-2;
                 programs_[shading_pass_shader]->bind();
 
-                GLint gAlbedo_location, gNormal_location, gDepth_location, current_buffer_location;
+                GLint gAlbedo_location, gNormal_location, gDepth_location, current_buffer_location, near_plane_location, far_plane_location;
                 gAlbedo_location = programs_[shading_pass_shader]->uniformLocation("gAlbedo");
                 gNormal_location = programs_[shading_pass_shader]->uniformLocation("gNormal");
                 gDepth_location = programs_[shading_pass_shader]->uniformLocation("gDepth");
                 current_buffer_location = programs_[shading_pass_shader]->uniformLocation("current_texture");
+                near_plane_location = programs_[shading_pass_shader]->uniformLocation("near_plane");
+                far_plane_location = programs_[shading_pass_shader]->uniformLocation("far_plane");
 
                 glActiveTexture(GL_TEXTURE7);
                 glBindTexture(GL_TEXTURE_2D, gAlbedoTex);
@@ -942,6 +944,10 @@ void GLWidget::paintGL ()
                 glUniform1i(gDepth_location, 9);
 
                 glUniform1i(current_buffer_location, currentBuffer_);
+
+                glUniform1f(near_plane_location, kZNear);
+                glUniform1f(far_plane_location, kZFar);
+
 
                 DrawQuad();
 

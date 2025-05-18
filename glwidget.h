@@ -211,7 +211,7 @@ class GLWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_3_Core {
   int using_metalness_map = 0;
 
   bool two_step_rendering = false;
-  int currentBuffer_;
+  int currentBuffer_ = 0;
   GLuint gAlbedoTex, gNormalTex, gDepthTex;
   GLuint gBuffer;
   GLuint quadVAO = 0, quadVBO = 0;
