@@ -81,6 +81,7 @@ class GLWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_3_Core {
 
   void DrawCube();
   void DrawQuad();
+  void initializeGBufferTextures();
 
  protected:
   /**
@@ -209,6 +210,11 @@ class GLWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_3_Core {
   int using_roughness_map = 0;
   int using_metalness_map = 0;
 
+  bool two_step_rendering = false;
+  int currentBuffer_;
+  GLuint gAlbedoTex, gNormalTex, gDepthTex;
+  GLuint gBuffer;
+  GLuint quadVAO = 0, quadVBO = 0;
  protected slots:
   /**
    * @brief paintGL Function that handles rendering the scene.
@@ -274,6 +280,16 @@ class GLWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_3_Core {
    * @brief SetFaces Signal that updates the interface label "Framerate".
    */
   void SetRoughness(double);
+
+  /**
+   * @brief Set2StepRenderer sets the type of rendering mode
+   */
+  void Set2StepRenderer(bool set);
+
+  /**
+   * @brief SetCurrentBuffer sets the current framebuffer to be displayed
+   */
+  void SetCurrentBuffer(int i);
 
  signals:
   /**

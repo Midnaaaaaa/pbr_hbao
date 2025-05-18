@@ -22,7 +22,6 @@
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QMenuBar>
 #include <QtWidgets/QRadioButton>
-#include <QtWidgets/QSpacerItem>
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
 #include "glwidget.h"
@@ -65,7 +64,8 @@ public:
     QHBoxLayout *horizontalLayout_3;
     QLabel *label_5;
     QDoubleSpinBox *dspin_metal;
-    QSpacerItem *Spacer;
+    QComboBox *comboBox;
+    QCheckBox *checkBox;
     QGroupBox *RenderOptions;
     QLabel *Label_NumFaces;
     QLabel *Label_Faces;
@@ -176,7 +176,7 @@ public:
         check_sky->setChecked(true);
         horizontalLayoutWidget = new QWidget(TreeOptions);
         horizontalLayoutWidget->setObjectName("horizontalLayoutWidget");
-        horizontalLayoutWidget->setGeometry(QRect(20, 180, 148, 28));
+        horizontalLayoutWidget->setGeometry(QRect(20, 180, 148, 31));
         horizontalLayout_2 = new QHBoxLayout(horizontalLayoutWidget);
         horizontalLayout_2->setSpacing(6);
         horizontalLayout_2->setContentsMargins(11, 11, 11, 11);
@@ -214,12 +214,18 @@ public:
 
         horizontalLayout_3->addWidget(dspin_metal);
 
+        comboBox = new QComboBox(TreeOptions);
+        comboBox->addItem(QString());
+        comboBox->addItem(QString());
+        comboBox->addItem(QString());
+        comboBox->setObjectName("comboBox");
+        comboBox->setGeometry(QRect(20, 470, 161, 21));
+        comboBox->setEditable(false);
+        checkBox = new QCheckBox(TreeOptions);
+        checkBox->setObjectName("checkBox");
+        checkBox->setGeometry(QRect(40, 440, 141, 26));
 
         Configuration->addWidget(TreeOptions);
-
-        Spacer = new QSpacerItem(50, 50, QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Maximum);
-
-        Configuration->addItem(Spacer);
 
         RenderOptions = new QGroupBox(Widget);
         RenderOptions->setObjectName("RenderOptions");
@@ -257,7 +263,7 @@ public:
         MainWindow->setCentralWidget(Widget);
         menuBar = new QMenuBar(MainWindow);
         menuBar->setObjectName("menuBar");
-        menuBar->setGeometry(QRect(0, 0, 828, 22));
+        menuBar->setGeometry(QRect(0, 0, 828, 25));
         menuFile = new QMenu(menuBar);
         menuFile->setObjectName("menuFile");
         MainWindow->setMenuBar(menuBar);
@@ -290,6 +296,8 @@ public:
         QObject::connect(check_sky, SIGNAL(clicked(bool)), glwidget, SLOT(SetSkyVisible(bool)));
         QObject::connect(dspin_metal, SIGNAL(valueChanged(double)), glwidget, SLOT(SetMetalness(double)));
         QObject::connect(dspin_rough, SIGNAL(valueChanged(double)), glwidget, SLOT(SetRoughness(double)));
+        QObject::connect(comboBox, SIGNAL(currentIndexChanged(int)), glwidget, SLOT(SetCurrentBuffer(int)));
+        QObject::connect(checkBox, SIGNAL(clicked(bool)), glwidget, SLOT(Set2StepRenderer(bool)));
 
         QMetaObject::connectSlotsByName(MainWindow);
     } // setupUi
@@ -320,6 +328,12 @@ public:
         check_sky->setText(QCoreApplication::translate("MainWindow", "Sky Box", nullptr));
         label_4->setText(QCoreApplication::translate("MainWindow", "Roughness", nullptr));
         label_5->setText(QCoreApplication::translate("MainWindow", "Metalness", nullptr));
+        comboBox->setItemText(0, QCoreApplication::translate("MainWindow", "Albedo", nullptr));
+        comboBox->setItemText(1, QCoreApplication::translate("MainWindow", "Normal", nullptr));
+        comboBox->setItemText(2, QCoreApplication::translate("MainWindow", "Depth", nullptr));
+
+        comboBox->setPlaceholderText(QCoreApplication::translate("MainWindow", "Albedo", nullptr));
+        checkBox->setText(QCoreApplication::translate("MainWindow", "2-step-rendering", nullptr));
         RenderOptions->setTitle(QString());
         Label_NumFaces->setText(QCoreApplication::translate("MainWindow", "0", nullptr));
         Label_Faces->setText(QCoreApplication::translate("MainWindow", "Faces", nullptr));

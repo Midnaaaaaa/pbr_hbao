@@ -29,6 +29,8 @@ const std::vector<std::vector<std::string>> kShaderFiles = {
     {"../shaders/conv-shader.vert",  "../shaders/conv-shader.frag"},
     {"../shaders/prefilter.vert",    "../shaders/prefilter.frag"},
     {"../shaders/brdf-lut.vert",     "../shaders/brdf-lut.frag"},
+    {"../shaders/g-pass.vert",       "../shaders/g-pass.frag"},
+    {"../shaders/shading-pass.vert", "../shaders/shading-pass.frag"},
     {"../shaders/sky.vert",          "../shaders/sky.frag"}};//sky needs to be the last one
 
 const int kVertexAttributeIdx = 0;
@@ -115,7 +117,9 @@ GLWidget::GLWidget(QWidget *parent)
     fresnel_(0.2, 0.2, 0.2),
     skyVisible_(true),
     metalness_(0),
-    roughness_(0)
+    roughness_(0),
+    two_step_rendering(false),
+    currentBuffer_(0)
 {
     setFocusPolicy(Qt::StrongFocus);
 }
@@ -243,36 +247,38 @@ bool GLWidget::LoadModel(const QString &filename) {
 }
 
 void GLWidget::DrawQuad(){
-    static GLuint quadVAO = 0;
-    static GLuint quadVBO = 0;
-
-    //x,y coords and uvs
+    // x,y coords and uvs
     if (quadVAO == 0) {
-        float vertices_ndc[] = {
-            -1.0f, -1.0f,        0.0f, 0.0f,
-            1.0f, -1.0f,        1.0f, 0.0f,
-            1.0f,  1.0f,        1.0f, 1.0f,
+        float quadVertices[] = {
+            // positions   // texCoords
+            -1.0f,  1.0f,  0.0f, 1.0f,
+            -1.0f, -1.0f,  0.0f, 0.0f,
+             1.0f, -1.0f,  1.0f, 0.0f,
 
-            1.0f,  1.0f,        1.0f, 1.0f,
-            -1.0f,  1.0f,        0.0f, 1.0f,
-            -1.0f, -1.0f,        0.0f, 0.0f
+            -1.0f,  1.0f,  0.0f, 1.0f,
+             1.0f, -1.0f,  1.0f, 0.0f,
+             1.0f,  1.0f,  1.0f, 1.0f
         };
 
+        // Setup plane VAO
         glGenVertexArrays(1, &quadVAO);
         glGenBuffers(1, &quadVBO);
-
-        glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices_ndc), vertices_ndc, GL_STATIC_DRAW);
-
         glBindVertexArray(quadVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
 
+        // Position attribute
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+
+        // Texture coordinate attribute
         glEnableVertexAttribArray(1);
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 
-
+        glBindVertexArray(0);
     }
+
+    // Draw the quad
     glBindVertexArray(quadVAO);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
@@ -381,15 +387,16 @@ void GLWidget::GenerateIrradianceAndPrefilteredMaps(const int cubemap_width, con
             glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3( 0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))
         };
 
-    programs_[programs_.size()-4]->bind();
+    int diffuse_irradiance_shader = 5;
+    programs_[diffuse_irradiance_shader]->bind();
 
     //--------------------------DRAW CALL FOR RENDERING IRRADIANCE DIFFUSE MAP TO FRAMEBUFFER ------------------------------------
 
     GLuint environment_map_location, capture_projection_location, capture_view_location;
 
-    environment_map_location = programs_[programs_.size()-4]->uniformLocation("environmentMap");
-    capture_projection_location = programs_[programs_.size()-4]->uniformLocation("projection");
-    capture_view_location = programs_[programs_.size()-4]->uniformLocation("view");
+    environment_map_location = programs_[diffuse_irradiance_shader]->uniformLocation("environmentMap");
+    capture_projection_location = programs_[diffuse_irradiance_shader]->uniformLocation("projection");
+    capture_view_location = programs_[diffuse_irradiance_shader]->uniformLocation("view");
     glUniform1i(environment_map_location, 0);
     glUniformMatrix4fv(capture_projection_location, 1, GL_FALSE, &captureProjection[0][0]);
 
@@ -429,13 +436,14 @@ void GLWidget::GenerateIrradianceAndPrefilteredMaps(const int cubemap_width, con
     glBindRenderbuffer(GL_RENDERBUFFER, captureRBO);
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, cubemap_width, cubemap_height);
 
-    programs_[programs_.size()-3]->bind();
+    int prefilter_shader = 6;
+    programs_[prefilter_shader]->bind();
 
     GLuint roughness_location;
-    roughness_location = programs_[programs_.size()-3]->uniformLocation("roughness");
-    environment_map_location = programs_[programs_.size()-3]->uniformLocation("environmentMap");
-    capture_projection_location = programs_[programs_.size()-3]->uniformLocation("projection");
-    capture_view_location = programs_[programs_.size()-3]->uniformLocation("view");
+    roughness_location = programs_[prefilter_shader]->uniformLocation("roughness");
+    environment_map_location = programs_[prefilter_shader]->uniformLocation("environmentMap");
+    capture_projection_location = programs_[prefilter_shader]->uniformLocation("projection");
+    capture_view_location = programs_[prefilter_shader]->uniformLocation("view");
     glUniform1i(environment_map_location, 0);
     glUniformMatrix4fv(capture_projection_location, 1, GL_FALSE, &captureProjection[0][0]);
     glActiveTexture(GL_TEXTURE0);
@@ -479,7 +487,8 @@ void GLWidget::GenerateIrradianceAndPrefilteredMaps(const int cubemap_width, con
 
     glViewport(0, 0, 1024, 1024);
 
-    programs_[programs_.size()-2]->bind();
+    int brdf_lut_shader = 7;
+    programs_[brdf_lut_shader]->bind();
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     DrawQuad();
@@ -664,6 +673,44 @@ bool GLWidget::LoadMetalnessMap(const QString &filename)
     return res;
 }
 
+void GLWidget::initializeGBufferTextures() {
+    glGenFramebuffers(1, &gBuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
+
+    glGenTextures(1, &gAlbedoTex);
+    glBindTexture(GL_TEXTURE_2D, gAlbedoTex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, this->width_, this->height_, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gAlbedoTex, 0);
+
+    glGenTextures(1, &gNormalTex);
+    glBindTexture(GL_TEXTURE_2D, gNormalTex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, this->width_, this->height_, 0, GL_RGB, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, gNormalTex, 0);
+
+    glGenTextures(1, &gDepthTex);
+    glBindTexture(GL_TEXTURE_2D, gDepthTex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, this->width_, this->height_, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, gDepthTex, 0);
+
+    GLuint attachments[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+    glDrawBuffers(2, attachments);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
 void GLWidget::initializeGL ()
 {
     // Cal inicialitzar l'ús de les funcions d'OpenGL
@@ -676,7 +723,6 @@ void GLWidget::initializeGL ()
     glEnable(GL_DEPTH_TEST);
 
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-
 
     //generating needed textures
     glGenTextures(1, &specular_map_);
@@ -697,6 +743,8 @@ void GLWidget::initializeGL ()
     programs_.push_back(std::make_unique<QOpenGLShaderProgram>());//conv-shader
     programs_.push_back(std::make_unique<QOpenGLShaderProgram>());//prefilter-shader
     programs_.push_back(std::make_unique<QOpenGLShaderProgram>());//brdf-lut-shader
+    programs_.push_back(std::make_unique<QOpenGLShaderProgram>());//g-pass
+    programs_.push_back(std::make_unique<QOpenGLShaderProgram>());//shading-pass
     programs_.push_back(std::make_unique<QOpenGLShaderProgram>());//sky
 
     //load vertex and fragment shader files
@@ -709,7 +757,8 @@ void GLWidget::initializeGL ()
     res = res && LoadProgram(kShaderFiles[6][0],   kShaderFiles[6][1],    programs_[6].get());
     res = res && LoadProgram(kShaderFiles[7][0],   kShaderFiles[7][1],    programs_[7].get());
     res = res && LoadProgram(kShaderFiles[8][0],   kShaderFiles[8][1],    programs_[8].get());
-
+    res = res && LoadProgram(kShaderFiles[9][0],   kShaderFiles[9][1],    programs_[9].get());
+    res = res && LoadProgram(kShaderFiles[10][0],   kShaderFiles[10][1],    programs_[10].get());
 
 
 
@@ -728,6 +777,7 @@ void GLWidget::resizeGL (int w, int h)
 
     camera_.SetViewport(0, 0, w, h);
     camera_.SetProjection(kFieldOfView, kZNear, kZFar);
+    initializeGBufferTextures();
 }
 
 void GLWidget::mousePressEvent(QMouseEvent *event) {
@@ -786,6 +836,7 @@ void GLWidget::paintGL ()
 {
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glEnable(GL_DEPTH_TEST);
 
     if (initialized_) {
         camera_.SetViewport();
@@ -835,91 +886,116 @@ void GLWidget::paintGL ()
             using_roughness_map_location         = programs_[currentShader_]->uniformLocation("using_roughness_map");
             using_metalness_map_location         = programs_[currentShader_]->uniformLocation("using_metalness_map");
 
+            if(two_step_rendering){
+                //FIRST PASS
+                glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+                int g_pass_shader = programs_.size()-3;
+                programs_[g_pass_shader]->bind();
 
-            glUniformMatrix4fv(projection_location, 1, GL_FALSE, &projection[0][0]);
-            glUniformMatrix4fv(view_location, 1, GL_FALSE, &view[0][0]);
-            glUniformMatrix4fv(model_location, 1, GL_FALSE, &model[0][0]);
-            glUniformMatrix3fv(normal_matrix_location, 1, GL_FALSE, &normal[0][0]);
+                GLint projection_location, view_location, model_location,normal_matrix_location, color_map_location, using_color_map_location;
+                projection_location       = programs_[g_pass_shader]->uniformLocation("projection");
+                view_location             = programs_[g_pass_shader]->uniformLocation("view");
+                model_location            = programs_[g_pass_shader]->uniformLocation("model");
+                normal_matrix_location    = programs_[g_pass_shader]->uniformLocation("normal_matrix");
+                using_color_map_location  = programs_[g_pass_shader]->uniformLocation("using_color_map");
+                color_map_location        = programs_[g_pass_shader]->uniformLocation("color_map");
 
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_CUBE_MAP, specular_map_);
-            glUniform1i(specular_map_location, 0);
+                glUniformMatrix4fv(projection_location, 1, GL_FALSE, &projection[0][0]);
+                glUniformMatrix4fv(view_location, 1, GL_FALSE, &view[0][0]);
+                glUniformMatrix4fv(model_location, 1, GL_FALSE, &model[0][0]);
+                glUniformMatrix3fv(normal_matrix_location, 1, GL_FALSE, &normal[0][0]);
+                glActiveTexture(GL_TEXTURE2);
+                glBindTexture(GL_TEXTURE_2D, color_map_);
+                glUniform1i(color_map_location, 2);
+                glUniform1i(using_color_map_location, using_color_map);
 
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_CUBE_MAP, diffuse_map_);
-            glUniform1i(diffuse_map_location, 1);
+                glBindVertexArray(VAO);
+                glDrawElements(GL_TRIANGLES, mesh_->faces_.size(), GL_UNSIGNED_INT, (GLvoid*)0);
+                glBindVertexArray(0);
 
-            //TODO(students): active texture location for the following textures:
-            glActiveTexture(GL_TEXTURE2);
-            glBindTexture(GL_TEXTURE_2D, color_map_);
-            glUniform1i(color_map_location, 2);
+                //SECOND PASS
+                glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebufferObject());
+                glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                glDisable(GL_DEPTH_TEST);
+                int shading_pass_shader = programs_.size()-2;
+                programs_[shading_pass_shader]->bind();
 
-            glActiveTexture(GL_TEXTURE3);
-            glBindTexture(GL_TEXTURE_2D, roughness_map_);
-            glUniform1i(roughness_map_location, 3);
+                GLint gAlbedo_location, gNormal_location, gDepth_location, current_buffer_location;
+                gAlbedo_location = programs_[shading_pass_shader]->uniformLocation("gAlbedo");
+                gNormal_location = programs_[shading_pass_shader]->uniformLocation("gNormal");
+                gDepth_location = programs_[shading_pass_shader]->uniformLocation("gDepth");
+                current_buffer_location = programs_[shading_pass_shader]->uniformLocation("current_texture");
 
-            glActiveTexture(GL_TEXTURE4);
-            glBindTexture(GL_TEXTURE_2D, metalness_map_);
-            glUniform1i(metalness_map_location, 4);
+                glActiveTexture(GL_TEXTURE7);
+                glBindTexture(GL_TEXTURE_2D, gAlbedoTex);
+                glUniform1i(gAlbedo_location, 7);
 
-            glActiveTexture(GL_TEXTURE5);
-            glBindTexture(GL_TEXTURE_CUBE_MAP, prefiltered_map_);
-            glUniform1i(prefiltered_map_location, 5);
+                glActiveTexture(GL_TEXTURE8);
+                glBindTexture(GL_TEXTURE_2D, gNormalTex);
+                glUniform1i(gNormal_location, 8);
 
-            glActiveTexture(GL_TEXTURE6);
-            glBindTexture(GL_TEXTURE_2D, brdf_lut_);
-            glUniform1i(brdf_lut_location, 6);
+                glActiveTexture(GL_TEXTURE9);
+                glBindTexture(GL_TEXTURE_2D, gDepthTex);
+                glUniform1i(gDepth_location, 9);
 
-            //TODO END
+                glUniform1i(current_buffer_location, currentBuffer_);
 
-            glUniform1i(max_mips_location, num_mips);
-            glUniform1i(current_text_location, currentTexture_);
-            glUniform3f(fresnel_location, fresnel_[0], fresnel_[1], fresnel_[2]);
-            glUniform3f(light_location, 0, 2, 0);
-            glUniform1f(roughness_location, roughness_);
-            glUniform1f(metalness_location, metalness_);
-            glUniform1i(using_color_map_location, using_color_map);
-            glUniform1i(using_roughness_map_location, using_roughness_map);
-            glUniform1i(using_metalness_map_location, using_metalness_map);
+                DrawQuad();
 
+                int width = this->width();
+                int height = this->height();
+                // === Albedo ===
+                glBindTexture(GL_TEXTURE_2D, gAlbedoTex);
+                std::vector<uchar> albedoData(width * height * 4);
+                glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, albedoData.data());
 
+                QImage albedoImg(width, height, QImage::Format_RGBA8888);
+                for (int y = 0; y < height; ++y)
+                    for (int x = 0; x < width; ++x) {
+                        int i = (y * width + x) * 4;
+                        QColor color(albedoData[i], albedoData[i+1], albedoData[i+2], albedoData[i+3]);
+                        albedoImg.setPixelColor(x, height - y - 1, color);
+                    }
+                albedoImg.save("C:/Users/polro/Desktop/albedo.png");
 
-            // TODO(students): Implement draw call of the mesh
-            glBindVertexArray(VAO);
-            glDrawElements(GL_TRIANGLES, mesh_->faces_.size(), GL_UNSIGNED_INT, (GLvoid*)0);
-            glBindVertexArray(0);
-            // TODO END.
+                // === Normal ===
+                glBindTexture(GL_TEXTURE_2D, gNormalTex);
+                std::vector<float> normalData(width * height * 3);
+                glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, normalData.data());
 
-            /*
-            for(int i = 0; i < 4; ++i){
-                for(int j = 0; j < 4; ++j){
-                    std::cout<<view[i][j]<< " ";
-                }
-                std::cout << std::endl;
+                QImage normalImg(width, height, QImage::Format_RGB888);
+                for (int y = 0; y < height; ++y)
+                    for (int x = 0; x < width; ++x) {
+                        int i = (y * width + x) * 3;
+                        auto encode = [](float v) { return uchar(std::clamp((v * 0.5f + 0.5f) * 255.0f, 0.0f, 255.0f)); };
+                        QColor color(encode(normalData[i]), encode(normalData[i+1]), encode(normalData[i+2]));
+                        normalImg.setPixelColor(x, height - y - 1, color);
+                    }
+                normalImg.save("C:/Users/polro/Desktop/normal.png");
+
+                // === Depth ===
+                glBindTexture(GL_TEXTURE_2D, gDepthTex);
+                std::vector<float> depthData(width * height);
+                glGetTexImage(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, GL_FLOAT, depthData.data());
+
+                float minD = *std::min_element(depthData.begin(), depthData.end());
+                float maxD = *std::max_element(depthData.begin(), depthData.end());
+
+                QImage depthImg(width, height, QImage::Format_Grayscale8);
+                for (int y = 0; y < height; ++y)
+                    for (int x = 0; x < width; ++x) {
+                        int i = y * width + x;
+                        float norm = (depthData[i] - minD) / (maxD - minD + 1e-6f);
+                        uchar gray = static_cast<uchar>(std::clamp(norm * 255.0f, 0.0f, 255.0f));
+                        depthImg.setPixelColor(x, height - y - 1, QColor(gray, gray, gray));
+                    }
+                depthImg.save("C:/Users/polro/Desktop/depth.png");
+
             }
-
-            for(int i = 0; i < 4; ++i){
-                for(int j = 0; j < 4; ++j){
-                    std::cout<<model[i][j]<< " ";
-                }
-                std::cout << std::endl;
-            }*/
-
-            //SKY-----------------------------------------------------------------------------------------
-            if(skyVisible_) {
-                //model = camera_.SetIdentity();
-
-                programs_[programs_.size()-1]->bind();
-
-                projection_location     = programs_[programs_.size()-1]->uniformLocation("projection");
-                view_location           = programs_[programs_.size()-1]->uniformLocation("view");
-                model_location          = programs_[programs_.size()-1]->uniformLocation("model");
-                normal_matrix_location  = programs_[programs_.size()-1]->uniformLocation("normal_matrix");
-                specular_map_location   = programs_[programs_.size()-1]->uniformLocation("specular_map");
-                diffuse_map_location   = programs_[programs_.size()-1]->uniformLocation("diffuse_map");
-
-
+            else{
                 glUniformMatrix4fv(projection_location, 1, GL_FALSE, &projection[0][0]);
                 glUniformMatrix4fv(view_location, 1, GL_FALSE, &view[0][0]);
                 glUniformMatrix4fv(model_location, 1, GL_FALSE, &model[0][0]);
@@ -933,17 +1009,87 @@ void GLWidget::paintGL ()
                 glBindTexture(GL_TEXTURE_CUBE_MAP, diffuse_map_);
                 glUniform1i(diffuse_map_location, 1);
 
+                //TODO(students): active texture location for the following textures:
+                glActiveTexture(GL_TEXTURE2);
+                glBindTexture(GL_TEXTURE_2D, color_map_);
+                glUniform1i(color_map_location, 2);
+
+                glActiveTexture(GL_TEXTURE3);
+                glBindTexture(GL_TEXTURE_2D, roughness_map_);
+                glUniform1i(roughness_map_location, 3);
+
+                glActiveTexture(GL_TEXTURE4);
+                glBindTexture(GL_TEXTURE_2D, metalness_map_);
+                glUniform1i(metalness_map_location, 4);
+
                 glActiveTexture(GL_TEXTURE5);
                 glBindTexture(GL_TEXTURE_CUBE_MAP, prefiltered_map_);
                 glUniform1i(prefiltered_map_location, 5);
 
-                glDepthFunc(GL_LEQUAL); //BECAUSE DEFAULT VALUE OF THE DEPTH BUFFER IS 1 SO WE HAVE TO ENSURE TO PAINT THE DEPTH BUFFER INDEPENDENTLY OF THE DEFAULT VALUE
-                // TODO(students): implement the draw call of the sky box
-                glBindVertexArray(VAO_sky);
-                glDrawElements(GL_TRIANGLES, skyFaces_.size(), GL_UNSIGNED_INT, (GLvoid*)0);
+                glActiveTexture(GL_TEXTURE6);
+                glBindTexture(GL_TEXTURE_2D, brdf_lut_);
+                glUniform1i(brdf_lut_location, 6);
+
+                //TODO END
+
+                glUniform1i(max_mips_location, num_mips);
+                glUniform1i(current_text_location, currentTexture_);
+                glUniform3f(fresnel_location, fresnel_[0], fresnel_[1], fresnel_[2]);
+                glUniform3f(light_location, 0, 2, 0);
+                glUniform1f(roughness_location, roughness_);
+                glUniform1f(metalness_location, metalness_);
+                glUniform1i(using_color_map_location, using_color_map);
+                glUniform1i(using_roughness_map_location, using_roughness_map);
+                glUniform1i(using_metalness_map_location, using_metalness_map);
+
+
+
+                // TODO(students): Implement draw call of the mesh
+                glBindVertexArray(VAO);
+                glDrawElements(GL_TRIANGLES, mesh_->faces_.size(), GL_UNSIGNED_INT, (GLvoid*)0);
                 glBindVertexArray(0);
                 // TODO END.
-                glDepthFunc(GL_LESS);
+
+
+                //SKY-----------------------------------------------------------------------------------------
+                if(skyVisible_) {
+                    //model = camera_.SetIdentity();
+
+                    programs_[programs_.size()-1]->bind();
+
+                    projection_location     = programs_[programs_.size()-1]->uniformLocation("projection");
+                    view_location           = programs_[programs_.size()-1]->uniformLocation("view");
+                    model_location          = programs_[programs_.size()-1]->uniformLocation("model");
+                    normal_matrix_location  = programs_[programs_.size()-1]->uniformLocation("normal_matrix");
+                    specular_map_location   = programs_[programs_.size()-1]->uniformLocation("specular_map");
+                    diffuse_map_location   = programs_[programs_.size()-1]->uniformLocation("diffuse_map");
+
+
+                    glUniformMatrix4fv(projection_location, 1, GL_FALSE, &projection[0][0]);
+                    glUniformMatrix4fv(view_location, 1, GL_FALSE, &view[0][0]);
+                    glUniformMatrix4fv(model_location, 1, GL_FALSE, &model[0][0]);
+                    glUniformMatrix3fv(normal_matrix_location, 1, GL_FALSE, &normal[0][0]);
+
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(GL_TEXTURE_CUBE_MAP, specular_map_);
+                    glUniform1i(specular_map_location, 0);
+
+                    glActiveTexture(GL_TEXTURE1);
+                    glBindTexture(GL_TEXTURE_CUBE_MAP, diffuse_map_);
+                    glUniform1i(diffuse_map_location, 1);
+
+                    glActiveTexture(GL_TEXTURE5);
+                    glBindTexture(GL_TEXTURE_CUBE_MAP, prefiltered_map_);
+                    glUniform1i(prefiltered_map_location, 5);
+
+                    glDepthFunc(GL_LEQUAL); //BECAUSE DEFAULT VALUE OF THE DEPTH BUFFER IS 1 SO WE HAVE TO ENSURE TO PAINT THE DEPTH BUFFER INDEPENDENTLY OF THE DEFAULT VALUE
+                    // TODO(students): implement the draw call of the sky box
+                    glBindVertexArray(VAO_sky);
+                    glDrawElements(GL_TRIANGLES, skyFaces_.size(), GL_UNSIGNED_INT, (GLvoid*)0);
+                    glBindVertexArray(0);
+                    // TODO END.
+                    glDepthFunc(GL_LESS);
+                }
             }
         }
     }
@@ -1010,6 +1156,17 @@ void GLWidget::SetMetalness(double d) {
 
 void GLWidget::SetRoughness(double d) {
     roughness_ = d;
+    update();
+}
+
+void GLWidget::Set2StepRenderer(bool set){
+    two_step_rendering = set;
+    update();
+}
+
+void GLWidget::SetCurrentBuffer(int i)
+{
+    currentBuffer_ = i;
     update();
 }
 

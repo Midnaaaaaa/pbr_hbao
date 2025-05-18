@@ -55,7 +55,10 @@ static constexpr auto qt_meta_stringdata_ZN8GLWidgetE = QtMocHelpers::stringData
     "SetCurrentTexture",
     "SetSkyVisible",
     "SetMetalness",
-    "SetRoughness"
+    "SetRoughness",
+    "Set2StepRenderer",
+    "SetCurrentBuffer",
+    "i"
 );
 #else  // !QT_MOC_HAS_STRINGDATA
 #error "qtmochelpers.h not found or too old."
@@ -67,7 +70,7 @@ Q_CONSTINIT static const uint qt_meta_data_ZN8GLWidgetE[] = {
       12,       // revision
        0,       // classname
        0,    0, // classinfo
-      16,   14, // methods
+      18,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -75,24 +78,26 @@ Q_CONSTINIT static const uint qt_meta_data_ZN8GLWidgetE[] = {
        3,       // signalCount
 
  // signals: name, argc, parameters, tag, flags, initial metatype offsets
-       1,    1,  110,    2, 0x06,    1 /* Public */,
-       3,    1,  113,    2, 0x06,    3 /* Public */,
-       4,    1,  116,    2, 0x06,    5 /* Public */,
+       1,    1,  122,    2, 0x06,    1 /* Public */,
+       3,    1,  125,    2, 0x06,    3 /* Public */,
+       4,    1,  128,    2, 0x06,    5 /* Public */,
 
  // slots: name, argc, parameters, tag, flags, initial metatype offsets
-       5,    0,  119,    2, 0x09,    7 /* Protected */,
-       6,    1,  120,    2, 0x09,    8 /* Protected */,
-       8,    1,  123,    2, 0x09,   10 /* Protected */,
-       9,    1,  126,    2, 0x09,   12 /* Protected */,
-      10,    1,  129,    2, 0x09,   14 /* Protected */,
-      11,    1,  132,    2, 0x09,   16 /* Protected */,
-      12,    1,  135,    2, 0x09,   18 /* Protected */,
-      13,    1,  138,    2, 0x09,   20 /* Protected */,
-      14,    1,  141,    2, 0x09,   22 /* Protected */,
-      15,    1,  144,    2, 0x09,   24 /* Protected */,
-      16,    1,  147,    2, 0x09,   26 /* Protected */,
-      17,    1,  150,    2, 0x09,   28 /* Protected */,
-      18,    1,  153,    2, 0x09,   30 /* Protected */,
+       5,    0,  131,    2, 0x09,    7 /* Protected */,
+       6,    1,  132,    2, 0x09,    8 /* Protected */,
+       8,    1,  135,    2, 0x09,   10 /* Protected */,
+       9,    1,  138,    2, 0x09,   12 /* Protected */,
+      10,    1,  141,    2, 0x09,   14 /* Protected */,
+      11,    1,  144,    2, 0x09,   16 /* Protected */,
+      12,    1,  147,    2, 0x09,   18 /* Protected */,
+      13,    1,  150,    2, 0x09,   20 /* Protected */,
+      14,    1,  153,    2, 0x09,   22 /* Protected */,
+      15,    1,  156,    2, 0x09,   24 /* Protected */,
+      16,    1,  159,    2, 0x09,   26 /* Protected */,
+      17,    1,  162,    2, 0x09,   28 /* Protected */,
+      18,    1,  165,    2, 0x09,   30 /* Protected */,
+      19,    1,  168,    2, 0x09,   32 /* Protected */,
+      20,    1,  171,    2, 0x09,   34 /* Protected */,
 
  // signals: parameters
     QMetaType::Void, QMetaType::QString,    2,
@@ -113,6 +118,8 @@ Q_CONSTINIT static const uint qt_meta_data_ZN8GLWidgetE[] = {
     QMetaType::Void, QMetaType::Bool,    7,
     QMetaType::Void, QMetaType::Double,    2,
     QMetaType::Void, QMetaType::Double,    2,
+    QMetaType::Void, QMetaType::Bool,    7,
+    QMetaType::Void, QMetaType::Int,   21,
 
        0        // eod
 };
@@ -172,7 +179,13 @@ Q_CONSTINIT const QMetaObject GLWidget::staticMetaObject = { {
         QtPrivate::TypeAndForceComplete<double, std::false_type>,
         // method 'SetRoughness'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
-        QtPrivate::TypeAndForceComplete<double, std::false_type>
+        QtPrivate::TypeAndForceComplete<double, std::false_type>,
+        // method 'Set2StepRenderer'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        QtPrivate::TypeAndForceComplete<bool, std::false_type>,
+        // method 'SetCurrentBuffer'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        QtPrivate::TypeAndForceComplete<int, std::false_type>
     >,
     nullptr
 } };
@@ -198,6 +211,8 @@ void GLWidget::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, vo
         case 13: _t->SetSkyVisible((*reinterpret_cast< std::add_pointer_t<bool>>(_a[1]))); break;
         case 14: _t->SetMetalness((*reinterpret_cast< std::add_pointer_t<double>>(_a[1]))); break;
         case 15: _t->SetRoughness((*reinterpret_cast< std::add_pointer_t<double>>(_a[1]))); break;
+        case 16: _t->Set2StepRenderer((*reinterpret_cast< std::add_pointer_t<bool>>(_a[1]))); break;
+        case 17: _t->SetCurrentBuffer((*reinterpret_cast< std::add_pointer_t<int>>(_a[1]))); break;
         default: ;
         }
     }
@@ -248,14 +263,14 @@ int GLWidget::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 16)
+        if (_id < 18)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 16;
+        _id -= 18;
     }
     if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 16)
+        if (_id < 18)
             *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType();
-        _id -= 16;
+        _id -= 18;
     }
     return _id;
 }

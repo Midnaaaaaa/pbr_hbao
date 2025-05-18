@@ -53,6 +53,8 @@ DISTFILES += \
     shaders/brdf-lut.vert \
     shaders/conv-shader.frag \
     shaders/conv-shader.vert \
+    shaders/g-pass.frag \
+    shaders/g-pass.vert \
     shaders/ibl-pbs.frag \
     shaders/ibl-pbs.vert \
     shaders/pbs.frag \
@@ -61,6 +63,8 @@ DISTFILES += \
     shaders/prefilter.vert \
     shaders/reflection.frag \
     shaders/reflection.vert \
+    shaders/shading-pass.frag \
+    shaders/shading-pass.vert \
     shaders/sky.frag \
     shaders/sky.vert \
     shaders/phong.frag \
