@@ -1006,7 +1006,7 @@ void GLWidget::paintGL ()
                 programs_[ssao_pass_shader]->bind();
 
                 GLint gAlbedo_location, gNormal_location, gDepth_location, current_buffer_location, near_plane_location, far_plane_location,
-                    radius_location, n_samples_location, n_dirs_location;
+                    radius_location, n_samples_location, n_dirs_location, fov_location, width_location, height_location;
                 gAlbedo_location = programs_[ssao_pass_shader]->uniformLocation("gAlbedo");
                 gNormal_location = programs_[ssao_pass_shader]->uniformLocation("gNormal");
                 gDepth_location = programs_[ssao_pass_shader]->uniformLocation("gDepth");
@@ -1016,6 +1016,10 @@ void GLWidget::paintGL ()
                 radius_location = programs_[ssao_pass_shader]->uniformLocation("radius");
                 n_samples_location = programs_[ssao_pass_shader]->uniformLocation("n_samples");
                 n_dirs_location = programs_[ssao_pass_shader]->uniformLocation("n_dirs");
+                fov_location = programs_[ssao_pass_shader]->uniformLocation("fov");
+                width_location = programs_[ssao_pass_shader]->uniformLocation("width");
+                height_location = programs_[ssao_pass_shader]->uniformLocation("height");
+                projection_location       = programs_[g_pass_shader]->uniformLocation("projection");
 
                 glActiveTexture(GL_TEXTURE7);
                 glBindTexture(GL_TEXTURE_2D, gAlbedoTex);
@@ -1038,6 +1042,13 @@ void GLWidget::paintGL ()
 
                 glUniform1i(n_samples_location, n_samples);
                 glUniform1i(n_dirs_location, n_directions);
+
+                glUniform1f(width_location, width_);
+                glUniform1f(height_location, height_);
+
+                glUniform1f(fov_location, kFieldOfView);
+                glUniformMatrix4fv(projection_location, 1, GL_FALSE, &projection[0][0]);
+
 
                 DrawQuad();
 

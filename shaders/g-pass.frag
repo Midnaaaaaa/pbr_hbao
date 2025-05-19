@@ -5,6 +5,7 @@ layout(location = 1) out vec3 gNormal;
 
 in vec3 vs_normal;
 in vec2 uvs;
+in vec3 vs_frag;
 
 uniform sampler2D color_map;
 uniform int using_color_map;
@@ -15,5 +16,10 @@ void main()
     if(using_color_map == 1){
         gAlbedo = texture2D(color_map, uvs);
     }
-    gNormal = normalize(vs_normal);
+    vec3 d_x = dFdx(vs_frag);
+    vec3 d_y = dFdy(vs_frag);
+        
+    gNormal = normalize(cross(d_x, d_y));;
+    
+    //gNormal = normalize(vs_normal);
 }
