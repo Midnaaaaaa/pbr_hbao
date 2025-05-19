@@ -89,6 +89,8 @@ DIST          = shaders/README.md \
 		shaders/sky.vert \
 		shaders/phong.frag \
 		shaders/phong.vert \
+		shaders/ssao-pass.frag \
+		shaders/ssao-pass.vert \
 		shaders/texMap.frag \
 		shaders/texMap.vert ..\..\triangle_mesh.h \
 		..\..\mesh_io.h \
@@ -1642,6 +1644,7 @@ compiler_clean: compiler_moc_predefs_clean compiler_moc_header_clean compiler_ui
 		C:/Qt/6.8.2/mingw_64/include/QtWidgets/qmenubar.h \
 		C:/Qt/6.8.2/mingw_64/include/QtWidgets/QRadioButton \
 		C:/Qt/6.8.2/mingw_64/include/QtWidgets/qradiobutton.h \
+		C:/Qt/6.8.2/mingw_64/include/QtWidgets/QSpinBox \
 		C:/Qt/6.8.2/mingw_64/include/QtWidgets/QVBoxLayout \
 		C:/Qt/6.8.2/mingw_64/include/QtWidgets/QWidget \
 		../../glwidget.h \

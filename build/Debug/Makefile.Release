@@ -89,6 +89,8 @@ DIST          = shaders/README.md \
 		shaders/sky.vert \
 		shaders/phong.frag \
 		shaders/phong.vert \
+		shaders/ssao-pass.frag \
+		shaders/ssao-pass.vert \
 		shaders/texMap.frag \
 		shaders/texMap.vert ..\..\triangle_mesh.h \
 		..\..\mesh_io.h \

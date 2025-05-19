@@ -30,6 +30,7 @@ const std::vector<std::vector<std::string>> kShaderFiles = {
     {"../shaders/prefilter.vert",    "../shaders/prefilter.frag"},
     {"../shaders/brdf-lut.vert",     "../shaders/brdf-lut.frag"},
     {"../shaders/g-pass.vert",       "../shaders/g-pass.frag"},
+    {"../shaders/ssao-pass.vert", "../shaders/ssao-pass.frag"},
     {"../shaders/shading-pass.vert", "../shaders/shading-pass.frag"},
     {"../shaders/sky.vert",          "../shaders/sky.frag"}};//sky needs to be the last one
 
@@ -771,6 +772,21 @@ void GLWidget::initializeGBufferTextures() {
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
+void GLWidget::initializeSSAOTex(){
+    glGenFramebuffers(1, &ssaoFBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, ssaoFBO);
+
+    glGenTextures(1, &ssaoTex);
+    glBindTexture(GL_TEXTURE_2D, ssaoTex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width_, height_, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssaoTex, 0);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+
 void GLWidget::initializeGL ()
 {
     // Cal inicialitzar l'ús de les funcions d'OpenGL
@@ -804,6 +820,7 @@ void GLWidget::initializeGL ()
     programs_.push_back(std::make_unique<QOpenGLShaderProgram>());//prefilter-shader
     programs_.push_back(std::make_unique<QOpenGLShaderProgram>());//brdf-lut-shader
     programs_.push_back(std::make_unique<QOpenGLShaderProgram>());//g-pass
+    programs_.push_back(std::make_unique<QOpenGLShaderProgram>());//ssao-pass
     programs_.push_back(std::make_unique<QOpenGLShaderProgram>());//shading-pass
     programs_.push_back(std::make_unique<QOpenGLShaderProgram>());//sky
 
@@ -819,6 +836,8 @@ void GLWidget::initializeGL ()
     res = res && LoadProgram(kShaderFiles[8][0],   kShaderFiles[8][1],    programs_[8].get());
     res = res && LoadProgram(kShaderFiles[9][0],   kShaderFiles[9][1],    programs_[9].get());
     res = res && LoadProgram(kShaderFiles[10][0],   kShaderFiles[10][1],    programs_[10].get());
+    res = res && LoadProgram(kShaderFiles[11][0],   kShaderFiles[11][1],    programs_[11].get());
+
 
 
 
@@ -838,6 +857,7 @@ void GLWidget::resizeGL (int w, int h)
     camera_.SetViewport(0, 0, w, h);
     camera_.SetProjection(kFieldOfView, kZNear, kZFar);
     initializeGBufferTextures();
+    initializeSSAOTex();
 }
 
 void GLWidget::mousePressEvent(QMouseEvent *event) {
@@ -978,24 +998,24 @@ void GLWidget::paintGL ()
                 glBindVertexArray(0);
 
                 //SECOND PASS
-                glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebufferObject());
+                glBindFramebuffer(GL_FRAMEBUFFER, ssaoFBO);
                 glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
                 glDisable(GL_DEPTH_TEST);
-                int shading_pass_shader = 9;
-                programs_[shading_pass_shader]->bind();
+                int ssao_pass_shader = 9;
+                programs_[ssao_pass_shader]->bind();
 
                 GLint gAlbedo_location, gNormal_location, gDepth_location, current_buffer_location, near_plane_location, far_plane_location,
                     radius_location, n_samples_location, n_dirs_location;
-                gAlbedo_location = programs_[shading_pass_shader]->uniformLocation("gAlbedo");
-                gNormal_location = programs_[shading_pass_shader]->uniformLocation("gNormal");
-                gDepth_location = programs_[shading_pass_shader]->uniformLocation("gDepth");
-                current_buffer_location = programs_[shading_pass_shader]->uniformLocation("current_texture");
-                near_plane_location = programs_[shading_pass_shader]->uniformLocation("near_plane");
-                far_plane_location = programs_[shading_pass_shader]->uniformLocation("far_plane");
-                radius_location = programs_[shading_pass_shader]->uniformLocation("radius");
-                n_samples_location = programs_[shading_pass_shader]->uniformLocation("n_samples");
-                n_dirs_location = programs_[shading_pass_shader]->uniformLocation("n_dirs");
+                gAlbedo_location = programs_[ssao_pass_shader]->uniformLocation("gAlbedo");
+                gNormal_location = programs_[ssao_pass_shader]->uniformLocation("gNormal");
+                gDepth_location = programs_[ssao_pass_shader]->uniformLocation("gDepth");
+                current_buffer_location = programs_[ssao_pass_shader]->uniformLocation("current_texture");
+                near_plane_location = programs_[ssao_pass_shader]->uniformLocation("near_plane");
+                far_plane_location = programs_[ssao_pass_shader]->uniformLocation("far_plane");
+                radius_location = programs_[ssao_pass_shader]->uniformLocation("radius");
+                n_samples_location = programs_[ssao_pass_shader]->uniformLocation("n_samples");
+                n_dirs_location = programs_[ssao_pass_shader]->uniformLocation("n_dirs");
 
                 glActiveTexture(GL_TEXTURE7);
                 glBindTexture(GL_TEXTURE_2D, gAlbedoTex);
@@ -1019,57 +1039,23 @@ void GLWidget::paintGL ()
                 glUniform1i(n_samples_location, n_samples);
                 glUniform1i(n_dirs_location, n_directions);
 
+                DrawQuad();
+
+                //SHADING PASS
+                glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebufferObject());
+                int shading_pass_shader = 10;
+                programs_[shading_pass_shader]->bind();
+
+                GLint ssao_texture_location;
+
+                ssao_texture_location = programs_[shading_pass_shader]->uniformLocation("ssaoTex");
+
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, ssaoTex);
+                glUniform1i(ssao_texture_location, 0);
 
                 DrawQuad();
-                /*
-                int width = this->width();
-                int height = this->height();
-                // === Albedo ===
-                glBindTexture(GL_TEXTURE_2D, gAlbedoTex);
-                std::vector<uchar> albedoData(width * height * 4);
-                glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, albedoData.data());
 
-                QImage albedoImg(width, height, QImage::Format_RGBA8888);
-                for (int y = 0; y < height; ++y)
-                    for (int x = 0; x < width; ++x) {
-                        int i = (y * width + x) * 4;
-                        QColor color(albedoData[i], albedoData[i+1], albedoData[i+2], albedoData[i+3]);
-                        albedoImg.setPixelColor(x, height - y - 1, color);
-                    }
-                albedoImg.save("C:/Users/polro/Desktop/albedo.png");
-
-                // === Normal ===
-                glBindTexture(GL_TEXTURE_2D, gNormalTex);
-                std::vector<float> normalData(width * height * 3);
-                glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, normalData.data());
-
-                QImage normalImg(width, height, QImage::Format_RGB888);
-                for (int y = 0; y < height; ++y)
-                    for (int x = 0; x < width; ++x) {
-                        int i = (y * width + x) * 3;
-                        auto encode = [](float v) { return uchar(std::clamp((v * 0.5f + 0.5f) * 255.0f, 0.0f, 255.0f)); };
-                        QColor color(encode(normalData[i]), encode(normalData[i+1]), encode(normalData[i+2]));
-                        normalImg.setPixelColor(x, height - y - 1, color);
-                    }
-                normalImg.save("C:/Users/polro/Desktop/normal.png");
-
-                // === Depth ===
-                glBindTexture(GL_TEXTURE_2D, gDepthTex);
-                std::vector<float> depthData(width * height);
-                glGetTexImage(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, GL_FLOAT, depthData.data());
-
-                float minD = *std::min_element(depthData.begin(), depthData.end());
-                float maxD = *std::max_element(depthData.begin(), depthData.end());
-
-                QImage depthImg(width, height, QImage::Format_Grayscale8);
-                for (int y = 0; y < height; ++y)
-                    for (int x = 0; x < width; ++x) {
-                        int i = y * width + x;
-                        float norm = (depthData[i] - minD) / (maxD - minD + 1e-6f);
-                        uchar gray = static_cast<uchar>(std::clamp(norm * 255.0f, 0.0f, 255.0f));
-                        depthImg.setPixelColor(x, height - y - 1, QColor(gray, gray, gray));
-                    }
-                depthImg.save("C:/Users/polro/Desktop/depth.png");*/
             }
             else{
                 glUniformMatrix4fv(projection_location, 1, GL_FALSE, &projection[0][0]);

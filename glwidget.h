@@ -83,6 +83,8 @@ class GLWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_3_Core {
   void DrawQuad();
   void initializeGBufferTextures();
   void DrawFloor();
+  void initializeSSAOTex();
+
 
  protected:
   /**
@@ -218,6 +220,10 @@ class GLWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_3_Core {
   float radius = 0.5;
   int n_samples = 10;
   int n_directions = 4;
+
+  GLuint ssaoFBO = 0;
+  GLuint ssaoTex = 0;
+
 
 
  protected slots:

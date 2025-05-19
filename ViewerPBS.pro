@@ -69,6 +69,8 @@ DISTFILES += \
     shaders/sky.vert \
     shaders/phong.frag \
     shaders/phong.vert \
+    shaders/ssao-pass.frag \
+    shaders/ssao-pass.vert \
     shaders/texMap.frag \
     shaders/texMap.vert
 
