@@ -22,6 +22,7 @@
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QMenuBar>
 #include <QtWidgets/QRadioButton>
+#include <QtWidgets/QSpinBox>
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
 #include "glwidget.h"
@@ -66,6 +67,18 @@ public:
     QDoubleSpinBox *dspin_metal;
     QComboBox *comboBox;
     QCheckBox *checkBox;
+    QWidget *horizontalLayoutWidget_3;
+    QHBoxLayout *AO_params;
+    QLabel *K_Radius;
+    QDoubleSpinBox *dspin_rough_2;
+    QWidget *horizontalLayoutWidget_4;
+    QHBoxLayout *AO_params_2;
+    QSpinBox *spinBox;
+    QLabel *K_Radius_2;
+    QWidget *horizontalLayoutWidget_5;
+    QHBoxLayout *AO_params_3;
+    QSpinBox *spinBox_2;
+    QLabel *K_Radius_3;
     QGroupBox *RenderOptions;
     QLabel *Label_NumFaces;
     QLabel *Label_Faces;
@@ -80,7 +93,7 @@ public:
     {
         if (MainWindow->objectName().isEmpty())
             MainWindow->setObjectName("MainWindow");
-        MainWindow->resize(828, 638);
+        MainWindow->resize(918, 817);
         MainWindow->setMinimumSize(QSize(827, 618));
         MainWindow->setBaseSize(QSize(600, 600));
         actionQuit = new QAction(MainWindow);
@@ -218,12 +231,72 @@ public:
         comboBox->addItem(QString());
         comboBox->addItem(QString());
         comboBox->addItem(QString());
+        comboBox->addItem(QString());
         comboBox->setObjectName("comboBox");
         comboBox->setGeometry(QRect(20, 470, 161, 21));
         comboBox->setEditable(false);
         checkBox = new QCheckBox(TreeOptions);
         checkBox->setObjectName("checkBox");
         checkBox->setGeometry(QRect(40, 440, 141, 26));
+        horizontalLayoutWidget_3 = new QWidget(TreeOptions);
+        horizontalLayoutWidget_3->setObjectName("horizontalLayoutWidget_3");
+        horizontalLayoutWidget_3->setGeometry(QRect(20, 500, 148, 31));
+        AO_params = new QHBoxLayout(horizontalLayoutWidget_3);
+        AO_params->setSpacing(6);
+        AO_params->setContentsMargins(11, 11, 11, 11);
+        AO_params->setObjectName("AO_params");
+        AO_params->setContentsMargins(0, 0, 0, 0);
+        K_Radius = new QLabel(horizontalLayoutWidget_3);
+        K_Radius->setObjectName("K_Radius");
+
+        AO_params->addWidget(K_Radius);
+
+        dspin_rough_2 = new QDoubleSpinBox(horizontalLayoutWidget_3);
+        dspin_rough_2->setObjectName("dspin_rough_2");
+        dspin_rough_2->setMaximum(1.000000000000000);
+        dspin_rough_2->setSingleStep(0.050000000000000);
+        dspin_rough_2->setValue(0.500000000000000);
+
+        AO_params->addWidget(dspin_rough_2);
+
+        horizontalLayoutWidget_4 = new QWidget(TreeOptions);
+        horizontalLayoutWidget_4->setObjectName("horizontalLayoutWidget_4");
+        horizontalLayoutWidget_4->setGeometry(QRect(20, 540, 148, 31));
+        AO_params_2 = new QHBoxLayout(horizontalLayoutWidget_4);
+        AO_params_2->setSpacing(6);
+        AO_params_2->setContentsMargins(11, 11, 11, 11);
+        AO_params_2->setObjectName("AO_params_2");
+        AO_params_2->setContentsMargins(0, 0, 0, 0);
+        spinBox = new QSpinBox(horizontalLayoutWidget_4);
+        spinBox->setObjectName("spinBox");
+        spinBox->setValue(4);
+
+        AO_params_2->addWidget(spinBox);
+
+        K_Radius_2 = new QLabel(horizontalLayoutWidget_4);
+        K_Radius_2->setObjectName("K_Radius_2");
+
+        AO_params_2->addWidget(K_Radius_2);
+
+        horizontalLayoutWidget_5 = new QWidget(TreeOptions);
+        horizontalLayoutWidget_5->setObjectName("horizontalLayoutWidget_5");
+        horizontalLayoutWidget_5->setGeometry(QRect(20, 580, 148, 31));
+        AO_params_3 = new QHBoxLayout(horizontalLayoutWidget_5);
+        AO_params_3->setSpacing(6);
+        AO_params_3->setContentsMargins(11, 11, 11, 11);
+        AO_params_3->setObjectName("AO_params_3");
+        AO_params_3->setContentsMargins(0, 0, 0, 0);
+        spinBox_2 = new QSpinBox(horizontalLayoutWidget_5);
+        spinBox_2->setObjectName("spinBox_2");
+        spinBox_2->setValue(10);
+
+        AO_params_3->addWidget(spinBox_2);
+
+        K_Radius_3 = new QLabel(horizontalLayoutWidget_5);
+        K_Radius_3->setObjectName("K_Radius_3");
+
+        AO_params_3->addWidget(K_Radius_3);
+
 
         Configuration->addWidget(TreeOptions);
 
@@ -263,7 +336,7 @@ public:
         MainWindow->setCentralWidget(Widget);
         menuBar = new QMenuBar(MainWindow);
         menuBar->setObjectName("menuBar");
-        menuBar->setGeometry(QRect(0, 0, 828, 25));
+        menuBar->setGeometry(QRect(0, 0, 918, 25));
         menuFile = new QMenu(menuBar);
         menuFile->setObjectName("menuFile");
         MainWindow->setMenuBar(menuBar);
@@ -298,6 +371,9 @@ public:
         QObject::connect(dspin_rough, SIGNAL(valueChanged(double)), glwidget, SLOT(SetRoughness(double)));
         QObject::connect(comboBox, SIGNAL(currentIndexChanged(int)), glwidget, SLOT(SetCurrentBuffer(int)));
         QObject::connect(checkBox, SIGNAL(clicked(bool)), glwidget, SLOT(Set2StepRenderer(bool)));
+        QObject::connect(dspin_rough_2, SIGNAL(valueChanged(double)), glwidget, SLOT(SetRadius(double)));
+        QObject::connect(spinBox, SIGNAL(valueChanged(int)), glwidget, SLOT(SetN_Directions(int)));
+        QObject::connect(spinBox_2, SIGNAL(valueChanged(int)), glwidget, SLOT(SetN_Samples(int)));
 
         QMetaObject::connectSlotsByName(MainWindow);
     } // setupUi
@@ -331,9 +407,13 @@ public:
         comboBox->setItemText(0, QCoreApplication::translate("MainWindow", "Albedo", nullptr));
         comboBox->setItemText(1, QCoreApplication::translate("MainWindow", "Normal", nullptr));
         comboBox->setItemText(2, QCoreApplication::translate("MainWindow", "Depth", nullptr));
+        comboBox->setItemText(3, QCoreApplication::translate("MainWindow", "SSAO", nullptr));
 
         comboBox->setPlaceholderText(QCoreApplication::translate("MainWindow", "Albedo", nullptr));
         checkBox->setText(QCoreApplication::translate("MainWindow", "2-step-rendering", nullptr));
+        K_Radius->setText(QCoreApplication::translate("MainWindow", "K_Radius", nullptr));
+        K_Radius_2->setText(QCoreApplication::translate("MainWindow", "N_directions", nullptr));
+        K_Radius_3->setText(QCoreApplication::translate("MainWindow", "N_samples", nullptr));
         RenderOptions->setTitle(QString());
         Label_NumFaces->setText(QCoreApplication::translate("MainWindow", "0", nullptr));
         Label_Faces->setText(QCoreApplication::translate("MainWindow", "Faces", nullptr));

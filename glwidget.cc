@@ -247,6 +247,9 @@ bool GLWidget::LoadModel(const QString &filename) {
 }
 
 void GLWidget::DrawQuad(){
+    static GLuint quadVAO = 0;
+    static GLuint quadVBO = 0;
+
     // x,y coords and uvs
     if (quadVAO == 0) {
         float quadVertices[] = {
@@ -982,13 +985,17 @@ void GLWidget::paintGL ()
                 int shading_pass_shader = 9;
                 programs_[shading_pass_shader]->bind();
 
-                GLint gAlbedo_location, gNormal_location, gDepth_location, current_buffer_location, near_plane_location, far_plane_location;
+                GLint gAlbedo_location, gNormal_location, gDepth_location, current_buffer_location, near_plane_location, far_plane_location,
+                    radius_location, n_samples_location, n_dirs_location;
                 gAlbedo_location = programs_[shading_pass_shader]->uniformLocation("gAlbedo");
                 gNormal_location = programs_[shading_pass_shader]->uniformLocation("gNormal");
                 gDepth_location = programs_[shading_pass_shader]->uniformLocation("gDepth");
                 current_buffer_location = programs_[shading_pass_shader]->uniformLocation("current_texture");
                 near_plane_location = programs_[shading_pass_shader]->uniformLocation("near_plane");
                 far_plane_location = programs_[shading_pass_shader]->uniformLocation("far_plane");
+                radius_location = programs_[shading_pass_shader]->uniformLocation("radius");
+                n_samples_location = programs_[shading_pass_shader]->uniformLocation("n_samples");
+                n_dirs_location = programs_[shading_pass_shader]->uniformLocation("n_dirs");
 
                 glActiveTexture(GL_TEXTURE7);
                 glBindTexture(GL_TEXTURE_2D, gAlbedoTex);
@@ -1006,6 +1013,11 @@ void GLWidget::paintGL ()
 
                 glUniform1f(near_plane_location, kZNear);
                 glUniform1f(far_plane_location, kZFar);
+
+                glUniform1f(radius_location, radius);
+
+                glUniform1i(n_samples_location, n_samples);
+                glUniform1i(n_dirs_location, n_directions);
 
 
                 DrawQuad();
@@ -1234,3 +1246,15 @@ void GLWidget::SetCurrentBuffer(int i)
     update();
 }
 
+void GLWidget::SetN_Samples(int i){
+    n_samples = i;
+    update();
+}
+void GLWidget::SetN_Directions(int i){
+    n_directions = i;
+    update();
+}
+void GLWidget::SetRadius(double r){
+    radius = r;
+    update();
+}

@@ -215,7 +215,11 @@ class GLWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_3_Core {
   int currentBuffer_ = 0;
   GLuint gAlbedoTex, gNormalTex, gDepthTex;
   GLuint gBuffer;
-  GLuint quadVAO = 0, quadVBO = 0;
+  float radius = 0.5;
+  int n_samples = 10;
+  int n_directions = 4;
+
+
  protected slots:
   /**
    * @brief paintGL Function that handles rendering the scene.
@@ -291,6 +295,11 @@ class GLWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_3_Core {
    * @brief SetCurrentBuffer sets the current framebuffer to be displayed
    */
   void SetCurrentBuffer(int i);
+
+
+  void SetN_Samples(int i);
+  void SetN_Directions(int i);
+  void SetRadius(double);
 
  signals:
   /**
