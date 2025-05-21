@@ -68,12 +68,13 @@ void main()
         texColor = vec4(vec3(linearDepth), 1.0);
     }
     else { // HBAO implementation
+
         vec3 viewPos = GetEyeSpacePos(uvs);
-        vec3 viewNormal = texture(gNormal, uvs).xyz * 2.0 - 1.0;
+        vec3 viewNormal = texture(gNormal, uvs).xyz;
 
         // Initialize AO
         float ao = 0.0;
-        
+
         // Convert radius to pixel space
         vec2 pixelSize = 1.0 / vec2(width, height);
         float pixelRadius = radius * 0.5 * height / (viewPos.z * tan(radians(fov * 0.5)));
@@ -96,7 +97,7 @@ void main()
                 // Calculate sample position in pixel space
                 float t = float(j) / float(n_samples);
                 vec2 offset = dir * t * pixelRadius;
-                
+
                 // Convert back to UV space
                 vec2 sampleUV = uvs + offset * pixelSize;
 
@@ -125,14 +126,20 @@ void main()
                 }
             }
 
-            // Calculate tangent angle (angle between up and surface normal projected onto the slice)
-            vec3 sliceNormal = normalize(cross(vec3(dir, 0.0), vec3(0.0, 0.0, 1.0)));
-            vec3 projectedNormal = viewNormal - sliceNormal * dot(viewNormal, sliceNormal);
-            float tangentAngle = atan(projectedNormal.z / length(projectedNormal.xy));
+            vec3 leftDirection = cross(normalize(viewPos), vec3(dir,0));
+            vec3 projectedNormal = viewNormal - dot(leftDirection, viewNormal) * leftDirection;
+            float projectedLen = length(projectedNormal);
+            projectedNormal /= projectedLen;
+
+            vec3 tangent = cross(projectedNormal, leftDirection);
+
+            const float bias = (3.141592/360)*20.f;
+
+            float tangentAngle = atan(tangent.z / length(tangent.xy));
 
             // Calculate AO contribution for this direction
             float horizonAngle = max(0.0, maxHorizonAngle);
-            float aoContribution = sin(horizonAngle) - sin(tangentAngle);
+            float aoContribution = sin(horizonAngle) - sin(tangentAngle + bias);
             ao += aoContribution;
         }
 
