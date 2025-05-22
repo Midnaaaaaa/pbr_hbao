@@ -51,6 +51,22 @@ vec3 GetEyeSpacePos(vec2 uvs){
     return vec3(x_eye, y_eye, -z_eye);
 }
 
+vec3 GetTangent(vec3 normal){
+    vec3 aux;
+    if(abs(normal.x) < 0.99){
+        aux = vec3(1,0,0);
+    }
+    else{
+        aux = vec3(0,1,0);
+    }
+    return normalize(cross(normal, aux));
+}
+
+vec3 GetBitangent(vec3 normal, vec3 tangent) {
+    return normalize(cross(normal, tangent));
+}
+
+
 
 void main()
 {
@@ -67,8 +83,7 @@ void main()
         float linearDepth = LinearizeDepth(depth) / far_plane;
         texColor = vec4(vec3(linearDepth), 1.0);
     }
-    else { // HBAO implementation
-
+    else{
         vec3 viewPos = GetEyeSpacePos(uvs);
         vec3 viewNormal = texture(gNormal, uvs).xyz;
 

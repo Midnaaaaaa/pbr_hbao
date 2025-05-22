@@ -21,5 +21,5 @@ void main()
         
     gNormal = normalize(cross(d_x, d_y));;
     
-    //gNormal = normalize(vs_normal);
+    gNormal = normalize(vs_normal);
 }
