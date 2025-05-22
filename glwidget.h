@@ -84,6 +84,7 @@ class GLWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_3_Core {
   void initializeGBufferTextures();
   void DrawFloor();
   void initializeSSAOTex();
+  void initializeBlurTex();
 
 
  protected:
@@ -223,6 +224,9 @@ class GLWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_3_Core {
 
   GLuint ssaoFBO = 0;
   GLuint ssaoTex = 0;
+
+  GLuint blurFBO = 0;
+  GLuint blurTex = 0;
   bool ssao_improvements = false;
 
 

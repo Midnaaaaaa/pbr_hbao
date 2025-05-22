@@ -11,6 +11,7 @@ uniform int current_texture;
 
 uniform float far_plane;
 uniform float near_plane;
+uniform float fov;
 
 uniform float radius;
 uniform int n_samples;
@@ -18,7 +19,7 @@ uniform int n_dirs;
 
 uniform float width;
 uniform float height;
-uniform float fov;
+
 
 uniform mat4 projection;
 uniform mat4 inv_projection;
@@ -27,7 +28,6 @@ uniform mat4 inv_view;
 uniform bool ssao_improvements;
 
 const float PI = 3.14159265359;
-const float EPSILON = 0.0001;
 
 float random(vec2 co) {
     return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
