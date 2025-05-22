@@ -1055,6 +1055,12 @@ void GLWidget::paintGL ()
 
                 DrawQuad();
 
+
+                //BLUR PASS
+
+
+
+
                 //SHADING PASS
                 glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebufferObject());
                 int shading_pass_shader = 10;

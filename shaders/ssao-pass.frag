@@ -89,38 +89,29 @@ void main()
         vec3 viewPos = GetEyeSpacePos(uvs);
         vec3 viewNormal = texture(gNormal, uvs).xyz;
 
-        // Initialize AO
-        float ao = 0.0;
+        vec3 viewTangent = GetTangent(viewNormal);
+        vec3 viewBitangent = GetBitangent(viewNormal, viewTangent);
 
-        // Convert radius to pixel space
-        vec2 pixelSize = 1.0 / vec2(width, height);
-        float pixelRadius = radius * 0.5 * height / (viewPos.z * tan(radians(fov * 0.5)));
 
-        // Get random rotation angle for this pixel
         float randomAngle = 0;
+        if(ssao_improvements) randomAngle = random(uvs * 1000.0) * 2.0 * PI;
 
-        if(ssao_improvements){
-            randomAngle = random(uvs * 1000.0) * 2.0 * PI;
-        }
-
-        // For each direction
+        float ao = 0.0;
         for (int i = 0; i < n_dirs; i++) {
-            // Calculate direction in view space
             float angle = float(i) * (2.0 * PI / float(n_dirs)) + randomAngle;
-            vec2 dir = vec2(cos(angle), sin(angle));
+            vec2 dir2D = vec2(cos(angle), sin(angle));
 
-            // Initialize horizon vector and maximum angle
+            vec3 dir3D = normalize(viewTangent * dir2D.x + viewBitangent * dir2D.y);
+
             vec3 horizonVec = vec3(0.0);
-            float maxHorizonAngle = -PI * 0.5; // Start with minimum possible angle
+            float maxHorizonAngle = -PI * 0.5;
 
-            // For each sample along the direction
             for (int j = 1; j <= n_samples; j++) {
-                // Calculate sample position in pixel space
                 float t = float(j) / float(n_samples);
-                vec2 offset = dir * t * pixelRadius;
 
-                // Convert back to UV space
-                vec2 sampleUV = uvs + offset * pixelSize;
+                vec3 samplePointView = viewPos + dir3D * radius * t;
+                vec4 samplePointClip = projection * vec4(samplePointView, 1.0);
+                vec2 sampleUV = (samplePointClip.xy / samplePointClip.w) * 0.5 + 0.5;
 
                 // Skip if out of screen
                 if (any(lessThan(sampleUV, vec2(0.0))) || any(greaterThan(sampleUV, vec2(1.0))))
@@ -146,8 +137,7 @@ void main()
                     horizonVec = v;
                 }
             }
-
-            vec3 leftDirection = cross(normalize(viewPos), vec3(dir,0));
+            vec3 leftDirection = cross(normalize(viewPos), vec3(dir3D));
             vec3 projectedNormal = viewNormal - dot(leftDirection, viewNormal) * leftDirection;
             float projectedLen = length(projectedNormal);
             projectedNormal /= projectedLen;
@@ -159,11 +149,10 @@ void main()
             float tangentAngle = atan(tangent.z / length(tangent.xy));
 
             // Calculate AO contribution for this direction
-            float horizonAngle = max(0.0, maxHorizonAngle);
+            float horizonAngle = max(tangentAngle, maxHorizonAngle);
             float aoContribution = sin(horizonAngle) - sin(tangentAngle + bias);
             ao += aoContribution;
         }
-
         // Average AO over all directions
         ao = 1.0 - ao / float(n_dirs);
 
