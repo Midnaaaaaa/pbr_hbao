@@ -69,6 +69,8 @@ OBJECTS       = ../../release/triangle_mesh.o \
 		../../release/moc_glwidget.o
 
 DIST          = shaders/README.md \
+		shaders/blur-pass.frag \
+		shaders/blur-pass.vert \
 		shaders/brdf-lut.frag \
 		shaders/brdf-lut.vert \
 		shaders/conv-shader.frag \

@@ -223,6 +223,7 @@ class GLWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_3_Core {
 
   GLuint ssaoFBO = 0;
   GLuint ssaoTex = 0;
+  bool ssao_improvements = false;
 
 
 
@@ -306,6 +307,7 @@ class GLWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_3_Core {
   void SetN_Samples(int i);
   void SetN_Directions(int i);
   void SetRadius(double);
+  void SetSSAOImprovements(bool set);
 
  signals:
   /**

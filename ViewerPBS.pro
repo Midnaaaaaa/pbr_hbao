@@ -49,6 +49,8 @@ OTHER_FILES +=
 
 DISTFILES += \
     shaders/README.md \
+    shaders/blur-pass.frag \
+    shaders/blur-pass.vert \
     shaders/brdf-lut.frag \
     shaders/brdf-lut.vert \
     shaders/conv-shader.frag \

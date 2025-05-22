@@ -79,6 +79,7 @@ public:
     QHBoxLayout *AO_params_3;
     QSpinBox *spinBox_2;
     QLabel *K_Radius_3;
+    QCheckBox *checkBox_2;
     QGroupBox *RenderOptions;
     QLabel *Label_NumFaces;
     QLabel *Label_Faces;
@@ -232,6 +233,7 @@ public:
         comboBox->addItem(QString());
         comboBox->addItem(QString());
         comboBox->addItem(QString());
+        comboBox->addItem(QString());
         comboBox->setObjectName("comboBox");
         comboBox->setGeometry(QRect(20, 470, 161, 21));
         comboBox->setEditable(false);
@@ -297,6 +299,9 @@ public:
 
         AO_params_3->addWidget(K_Radius_3);
 
+        checkBox_2 = new QCheckBox(TreeOptions);
+        checkBox_2->setObjectName("checkBox_2");
+        checkBox_2->setGeometry(QRect(20, 620, 161, 26));
 
         Configuration->addWidget(TreeOptions);
 
@@ -374,6 +379,7 @@ public:
         QObject::connect(dspin_rough_2, SIGNAL(valueChanged(double)), glwidget, SLOT(SetRadius(double)));
         QObject::connect(spinBox, SIGNAL(valueChanged(int)), glwidget, SLOT(SetN_Directions(int)));
         QObject::connect(spinBox_2, SIGNAL(valueChanged(int)), glwidget, SLOT(SetN_Samples(int)));
+        QObject::connect(checkBox_2, SIGNAL(clicked(bool)), glwidget, SLOT(SetSSAOImprovements(bool)));
 
         QMetaObject::connectSlotsByName(MainWindow);
     } // setupUi
@@ -408,12 +414,14 @@ public:
         comboBox->setItemText(1, QCoreApplication::translate("MainWindow", "Normal", nullptr));
         comboBox->setItemText(2, QCoreApplication::translate("MainWindow", "Depth", nullptr));
         comboBox->setItemText(3, QCoreApplication::translate("MainWindow", "SSAO", nullptr));
+        comboBox->setItemText(4, QCoreApplication::translate("MainWindow", "Shaded", nullptr));
 
         comboBox->setPlaceholderText(QCoreApplication::translate("MainWindow", "Albedo", nullptr));
         checkBox->setText(QCoreApplication::translate("MainWindow", "2-step-rendering", nullptr));
         K_Radius->setText(QCoreApplication::translate("MainWindow", "K_Radius", nullptr));
         K_Radius_2->setText(QCoreApplication::translate("MainWindow", "N_directions", nullptr));
         K_Radius_3->setText(QCoreApplication::translate("MainWindow", "N_samples", nullptr));
+        checkBox_2->setText(QCoreApplication::translate("MainWindow", "SSAO Improvements", nullptr));
         RenderOptions->setTitle(QString());
         Label_NumFaces->setText(QCoreApplication::translate("MainWindow", "0", nullptr));
         Label_Faces->setText(QCoreApplication::translate("MainWindow", "Faces", nullptr));

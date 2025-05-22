@@ -1006,7 +1006,7 @@ void GLWidget::paintGL ()
                 programs_[ssao_pass_shader]->bind();
 
                 GLint gAlbedo_location, gNormal_location, gDepth_location, current_buffer_location, near_plane_location, far_plane_location,
-                    radius_location, n_samples_location, n_dirs_location, fov_location, width_location, height_location;
+                    radius_location, n_samples_location, n_dirs_location, fov_location, width_location, height_location, ssao_improvements_location;
                 gAlbedo_location = programs_[ssao_pass_shader]->uniformLocation("gAlbedo");
                 gNormal_location = programs_[ssao_pass_shader]->uniformLocation("gNormal");
                 gDepth_location = programs_[ssao_pass_shader]->uniformLocation("gDepth");
@@ -1019,7 +1019,8 @@ void GLWidget::paintGL ()
                 fov_location = programs_[ssao_pass_shader]->uniformLocation("fov");
                 width_location = programs_[ssao_pass_shader]->uniformLocation("width");
                 height_location = programs_[ssao_pass_shader]->uniformLocation("height");
-                projection_location       = programs_[g_pass_shader]->uniformLocation("projection");
+                projection_location       = programs_[ssao_pass_shader]->uniformLocation("projection");
+                ssao_improvements_location = programs_[ssao_pass_shader]->uniformLocation("ssao_improvements");
 
                 glActiveTexture(GL_TEXTURE7);
                 glBindTexture(GL_TEXTURE_2D, gAlbedoTex);
@@ -1048,6 +1049,8 @@ void GLWidget::paintGL ()
 
                 glUniform1f(fov_location, kFieldOfView);
                 glUniformMatrix4fv(projection_location, 1, GL_FALSE, &projection[0][0]);
+
+                glUniform1i(ssao_improvements_location, ssao_improvements);
 
 
                 DrawQuad();
@@ -1253,5 +1256,10 @@ void GLWidget::SetN_Directions(int i){
 }
 void GLWidget::SetRadius(double r){
     radius = r;
+    update();
+}
+
+void GLWidget::SetSSAOImprovements(bool set){
+    ssao_improvements = set;
     update();
 }

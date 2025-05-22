@@ -24,6 +24,8 @@ uniform mat4 projection;
 uniform mat4 inv_projection;
 uniform mat4 inv_view;
 
+uniform bool ssao_improvements;
+
 const float PI = 3.14159265359;
 const float EPSILON = 0.0001;
 
@@ -95,7 +97,11 @@ void main()
         float pixelRadius = radius * 0.5 * height / (viewPos.z * tan(radians(fov * 0.5)));
 
         // Get random rotation angle for this pixel
-        float randomAngle = random(uvs * 1000.0) * 2.0 * PI;
+        float randomAngle = 0;
+
+        if(ssao_improvements){
+            randomAngle = random(uvs * 1000.0) * 2.0 * PI;
+        }
 
         // For each direction
         for (int i = 0; i < n_dirs; i++) {
