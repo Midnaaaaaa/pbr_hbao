@@ -56,7 +56,6 @@ static constexpr auto qt_meta_stringdata_ZN8GLWidgetE = QtMocHelpers::stringData
     "SetSkyVisible",
     "SetMetalness",
     "SetRoughness",
-    "Set2StepRenderer",
     "SetCurrentBuffer",
     "i",
     "SetN_Samples",
@@ -74,7 +73,7 @@ Q_CONSTINIT static const uint qt_meta_data_ZN8GLWidgetE[] = {
       12,       // revision
        0,       // classname
        0,    0, // classinfo
-      22,   14, // methods
+      21,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -82,30 +81,29 @@ Q_CONSTINIT static const uint qt_meta_data_ZN8GLWidgetE[] = {
        3,       // signalCount
 
  // signals: name, argc, parameters, tag, flags, initial metatype offsets
-       1,    1,  146,    2, 0x06,    1 /* Public */,
-       3,    1,  149,    2, 0x06,    3 /* Public */,
-       4,    1,  152,    2, 0x06,    5 /* Public */,
+       1,    1,  140,    2, 0x06,    1 /* Public */,
+       3,    1,  143,    2, 0x06,    3 /* Public */,
+       4,    1,  146,    2, 0x06,    5 /* Public */,
 
  // slots: name, argc, parameters, tag, flags, initial metatype offsets
-       5,    0,  155,    2, 0x09,    7 /* Protected */,
-       6,    1,  156,    2, 0x09,    8 /* Protected */,
-       8,    1,  159,    2, 0x09,   10 /* Protected */,
-       9,    1,  162,    2, 0x09,   12 /* Protected */,
-      10,    1,  165,    2, 0x09,   14 /* Protected */,
-      11,    1,  168,    2, 0x09,   16 /* Protected */,
-      12,    1,  171,    2, 0x09,   18 /* Protected */,
-      13,    1,  174,    2, 0x09,   20 /* Protected */,
-      14,    1,  177,    2, 0x09,   22 /* Protected */,
-      15,    1,  180,    2, 0x09,   24 /* Protected */,
-      16,    1,  183,    2, 0x09,   26 /* Protected */,
-      17,    1,  186,    2, 0x09,   28 /* Protected */,
-      18,    1,  189,    2, 0x09,   30 /* Protected */,
-      19,    1,  192,    2, 0x09,   32 /* Protected */,
-      20,    1,  195,    2, 0x09,   34 /* Protected */,
-      22,    1,  198,    2, 0x09,   36 /* Protected */,
-      23,    1,  201,    2, 0x09,   38 /* Protected */,
-      24,    1,  204,    2, 0x09,   40 /* Protected */,
-      25,    1,  207,    2, 0x09,   42 /* Protected */,
+       5,    0,  149,    2, 0x09,    7 /* Protected */,
+       6,    1,  150,    2, 0x09,    8 /* Protected */,
+       8,    1,  153,    2, 0x09,   10 /* Protected */,
+       9,    1,  156,    2, 0x09,   12 /* Protected */,
+      10,    1,  159,    2, 0x09,   14 /* Protected */,
+      11,    1,  162,    2, 0x09,   16 /* Protected */,
+      12,    1,  165,    2, 0x09,   18 /* Protected */,
+      13,    1,  168,    2, 0x09,   20 /* Protected */,
+      14,    1,  171,    2, 0x09,   22 /* Protected */,
+      15,    1,  174,    2, 0x09,   24 /* Protected */,
+      16,    1,  177,    2, 0x09,   26 /* Protected */,
+      17,    1,  180,    2, 0x09,   28 /* Protected */,
+      18,    1,  183,    2, 0x09,   30 /* Protected */,
+      19,    1,  186,    2, 0x09,   32 /* Protected */,
+      21,    1,  189,    2, 0x09,   34 /* Protected */,
+      22,    1,  192,    2, 0x09,   36 /* Protected */,
+      23,    1,  195,    2, 0x09,   38 /* Protected */,
+      24,    1,  198,    2, 0x09,   40 /* Protected */,
 
  // signals: parameters
     QMetaType::Void, QMetaType::QString,    2,
@@ -126,10 +124,9 @@ Q_CONSTINIT static const uint qt_meta_data_ZN8GLWidgetE[] = {
     QMetaType::Void, QMetaType::Bool,    7,
     QMetaType::Void, QMetaType::Double,    2,
     QMetaType::Void, QMetaType::Double,    2,
-    QMetaType::Void, QMetaType::Bool,    7,
-    QMetaType::Void, QMetaType::Int,   21,
-    QMetaType::Void, QMetaType::Int,   21,
-    QMetaType::Void, QMetaType::Int,   21,
+    QMetaType::Void, QMetaType::Int,   20,
+    QMetaType::Void, QMetaType::Int,   20,
+    QMetaType::Void, QMetaType::Int,   20,
     QMetaType::Void, QMetaType::Double,    2,
     QMetaType::Void, QMetaType::Bool,    7,
 
@@ -192,9 +189,6 @@ Q_CONSTINIT const QMetaObject GLWidget::staticMetaObject = { {
         // method 'SetRoughness'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         QtPrivate::TypeAndForceComplete<double, std::false_type>,
-        // method 'Set2StepRenderer'
-        QtPrivate::TypeAndForceComplete<void, std::false_type>,
-        QtPrivate::TypeAndForceComplete<bool, std::false_type>,
         // method 'SetCurrentBuffer'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         QtPrivate::TypeAndForceComplete<int, std::false_type>,
@@ -235,12 +229,11 @@ void GLWidget::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, vo
         case 13: _t->SetSkyVisible((*reinterpret_cast< std::add_pointer_t<bool>>(_a[1]))); break;
         case 14: _t->SetMetalness((*reinterpret_cast< std::add_pointer_t<double>>(_a[1]))); break;
         case 15: _t->SetRoughness((*reinterpret_cast< std::add_pointer_t<double>>(_a[1]))); break;
-        case 16: _t->Set2StepRenderer((*reinterpret_cast< std::add_pointer_t<bool>>(_a[1]))); break;
-        case 17: _t->SetCurrentBuffer((*reinterpret_cast< std::add_pointer_t<int>>(_a[1]))); break;
-        case 18: _t->SetN_Samples((*reinterpret_cast< std::add_pointer_t<int>>(_a[1]))); break;
-        case 19: _t->SetN_Directions((*reinterpret_cast< std::add_pointer_t<int>>(_a[1]))); break;
-        case 20: _t->SetRadius((*reinterpret_cast< std::add_pointer_t<double>>(_a[1]))); break;
-        case 21: _t->SetSSAOImprovements((*reinterpret_cast< std::add_pointer_t<bool>>(_a[1]))); break;
+        case 16: _t->SetCurrentBuffer((*reinterpret_cast< std::add_pointer_t<int>>(_a[1]))); break;
+        case 17: _t->SetN_Samples((*reinterpret_cast< std::add_pointer_t<int>>(_a[1]))); break;
+        case 18: _t->SetN_Directions((*reinterpret_cast< std::add_pointer_t<int>>(_a[1]))); break;
+        case 19: _t->SetRadius((*reinterpret_cast< std::add_pointer_t<double>>(_a[1]))); break;
+        case 20: _t->SetSSAOImprovements((*reinterpret_cast< std::add_pointer_t<bool>>(_a[1]))); break;
         default: ;
         }
     }
@@ -291,14 +284,14 @@ int GLWidget::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 22)
+        if (_id < 21)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 22;
+        _id -= 21;
     }
     if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 22)
+        if (_id < 21)
             *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType();
-        _id -= 22;
+        _id -= 21;
     }
     return _id;
 }

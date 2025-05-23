@@ -119,7 +119,6 @@ GLWidget::GLWidget(QWidget *parent)
     skyVisible_(true),
     metalness_(0),
     roughness_(0),
-    two_step_rendering(false),
     currentBuffer_(0)
 {
     setFocusPolicy(Qt::StrongFocus);
@@ -1268,11 +1267,6 @@ void GLWidget::SetMetalness(double d) {
 
 void GLWidget::SetRoughness(double d) {
     roughness_ = d;
-    update();
-}
-
-void GLWidget::Set2StepRenderer(bool set){
-    two_step_rendering = set;
     update();
 }
 

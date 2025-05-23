@@ -66,7 +66,6 @@ public:
     QLabel *label_5;
     QDoubleSpinBox *dspin_metal;
     QComboBox *comboBox;
-    QCheckBox *checkBox;
     QWidget *horizontalLayoutWidget_3;
     QHBoxLayout *AO_params;
     QLabel *K_Radius;
@@ -235,11 +234,8 @@ public:
         comboBox->addItem(QString());
         comboBox->addItem(QString());
         comboBox->setObjectName("comboBox");
-        comboBox->setGeometry(QRect(20, 470, 161, 21));
+        comboBox->setGeometry(QRect(20, 450, 161, 41));
         comboBox->setEditable(false);
-        checkBox = new QCheckBox(TreeOptions);
-        checkBox->setObjectName("checkBox");
-        checkBox->setGeometry(QRect(40, 440, 141, 26));
         horizontalLayoutWidget_3 = new QWidget(TreeOptions);
         horizontalLayoutWidget_3->setObjectName("horizontalLayoutWidget_3");
         horizontalLayoutWidget_3->setGeometry(QRect(20, 500, 148, 31));
@@ -375,7 +371,6 @@ public:
         QObject::connect(dspin_metal, SIGNAL(valueChanged(double)), glwidget, SLOT(SetMetalness(double)));
         QObject::connect(dspin_rough, SIGNAL(valueChanged(double)), glwidget, SLOT(SetRoughness(double)));
         QObject::connect(comboBox, SIGNAL(currentIndexChanged(int)), glwidget, SLOT(SetCurrentBuffer(int)));
-        QObject::connect(checkBox, SIGNAL(clicked(bool)), glwidget, SLOT(Set2StepRenderer(bool)));
         QObject::connect(dspin_rough_2, SIGNAL(valueChanged(double)), glwidget, SLOT(SetRadius(double)));
         QObject::connect(spinBox, SIGNAL(valueChanged(int)), glwidget, SLOT(SetN_Directions(int)));
         QObject::connect(spinBox_2, SIGNAL(valueChanged(int)), glwidget, SLOT(SetN_Samples(int)));
@@ -417,7 +412,6 @@ public:
         comboBox->setItemText(4, QCoreApplication::translate("MainWindow", "Shaded", nullptr));
 
         comboBox->setPlaceholderText(QCoreApplication::translate("MainWindow", "Albedo", nullptr));
-        checkBox->setText(QCoreApplication::translate("MainWindow", "2-step-rendering", nullptr));
         K_Radius->setText(QCoreApplication::translate("MainWindow", "K_Radius", nullptr));
         K_Radius_2->setText(QCoreApplication::translate("MainWindow", "N_directions", nullptr));
         K_Radius_3->setText(QCoreApplication::translate("MainWindow", "N_samples", nullptr));
