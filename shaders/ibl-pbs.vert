@@ -17,7 +17,7 @@ out vec2 uvs;
 void main(void){
     uvs = texCoord;
     ws_normal = normalize((transpose(inverse(model)) * vec4(normal, 0.f)).xyz);
-    vs_normal = normalize(normal_matrix * normal);  // Transform normal to view space
+    vs_normal = normalize(normal_matrix * normal);
     frag_ws = (model * vec4(vert, 1.0)).xyz;
     gl_Position = projection * view * model * vec4(vert, 1.0);
 }

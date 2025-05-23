@@ -10,14 +10,14 @@ uniform mat4 view;
 uniform mat3 normal_matrix;
 
 out vec3 ws_normal;
-out vec3 vs_normal;  // View-space normal
+out vec3 vs_normal;
 out vec3 frag_ws;
 out vec2 uvs;
 
 void main(void){
     uvs = texCoord;
     ws_normal = normalize((transpose(inverse(model)) * vec4(normal, 0.f)).xyz);
-    vs_normal = normalize(normal_matrix * normal);  // Transform normal to view space
+    vs_normal = normalize(normal_matrix * normal);
     frag_ws = (model * vec4(vert, 1.0)).xyz;
     gl_Position = projection * view * model * vec4(vert, 1.0);
 }

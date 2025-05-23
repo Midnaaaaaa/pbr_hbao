@@ -3,7 +3,7 @@
 layout(location = 0) out vec4 gAlbedo;
 layout(location = 1) out vec3 gNormal;
 in vec2 uvs;
-in vec3 vs_normal;  // View-space normal for G-buffer
+in vec3 vs_normal;
 uniform sampler2D color_map;
 uniform sampler2D roughness_map;
 uniform sampler2D metalness_map;
@@ -22,6 +22,5 @@ void main (void) {
         texColor = texture(metalness_map, uvs);
     }
     gAlbedo = texColor;
-    // Store view-space normal in G-buffer
     gNormal = normalize(vs_normal);
 }

@@ -8,7 +8,7 @@ uniform mat4 view;
 uniform mat3 normal_matrix;
 
 in vec3 ws_normal;
-in vec3 vs_normal;  // View-space normal
+in vec3 vs_normal;
 in vec3 frag_ws;
 in vec2 uvs;
 
@@ -100,6 +100,5 @@ void main (void) {
     color = pow(color, vec3(1.0/2.2));
 
     gAlbedo = vec4(color, 1.0);
-    // Store view-space normal in G-buffer
     gNormal = normalize(vs_normal);
 }

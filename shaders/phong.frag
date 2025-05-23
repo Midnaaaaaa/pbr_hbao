@@ -3,7 +3,7 @@
 layout(location = 0) out vec4 gAlbedo;
 layout(location = 1) out vec3 gNormal;
 in vec3 normal_ws;
-in vec3 vs_normal;  // View-space normal for G-buffer
+in vec3 vs_normal;
 in vec3 frag_ws;
 uniform mat4 view;
 
@@ -53,6 +53,5 @@ void main (void) {
     l.light_intensity = 0.5;
 
     gAlbedo = vec4(mat.col * phong(mat, l), 1.0);
-    // Store view-space normal in G-buffer
     gNormal = normalize(vs_normal);
 }

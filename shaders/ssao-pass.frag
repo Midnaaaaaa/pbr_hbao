@@ -68,8 +68,6 @@ vec3 GetBitangent(vec3 normal, vec3 tangent) {
     return normalize(cross(normal, tangent));
 }
 
-
-
 void main()
 {
     vec4 texColor = vec4(1,0,0,1);
@@ -113,25 +111,19 @@ void main()
                 vec4 samplePointClip = projection * vec4(samplePointView, 1.0);
                 vec2 sampleUV = (samplePointClip.xy / samplePointClip.w) * 0.5 + 0.5;
 
-                // Skip if out of screen
                 if (any(lessThan(sampleUV, vec2(0.0))) || any(greaterThan(sampleUV, vec2(1.0))))
                     continue;
 
-                // Get sample position in view space
                 vec3 samplePos = GetEyeSpacePos(sampleUV);
 
-                // Calculate vector from current point to sample point
                 vec3 v = samplePos - viewPos;
                 float dist = length(v);
 
-                // Skip if sample is behind the surface or too far
                 if (dist > radius || dot(v, viewNormal) < 0.0)
                     continue;
 
-                // Calculate angle between up vector and direction to sample
                 float angleToSample = atan(v.z / length(v.xy));
 
-                // Update maximum horizon angle and vector
                 if (angleToSample > maxHorizonAngle) {
                     maxHorizonAngle = angleToSample;
                     horizonVec = v;
@@ -148,12 +140,11 @@ void main()
 
             float tangentAngle = atan(tangent.z / length(tangent.xy));
 
-            // Calculate AO contribution for this direction
+
             float horizonAngle = max(tangentAngle, maxHorizonAngle);
             float aoContribution = sin(horizonAngle) - sin(tangentAngle + bias);
             ao += aoContribution;
         }
-        // Average AO over all directions
         ao = 1.0 - ao / float(n_dirs);
 
         texColor = vec4(vec3(ao), 1.0);
