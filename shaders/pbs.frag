@@ -1,12 +1,14 @@
 #version 330
 
-out vec4 frag_color;
+layout(location = 0) out vec4 gAlbedo;
+layout(location = 1) out vec3 gNormal;
 uniform mat4 projection;
 uniform mat4 model;
 uniform mat4 view;
 uniform mat3 normal_matrix;
 
 in vec3 ws_normal;
+in vec3 vs_normal;  // View-space normal
 in vec3 frag_ws;
 in vec2 uvs;
 
@@ -65,7 +67,7 @@ void main (void) {
 
     roughness_val = max(roughness_val, 0.001);
 
-    vec3 N = normalize(ws_normal);
+    vec3 N = normalize(ws_normal);  // Keep using world-space normal for calculations
     vec3 l = normalize(light - frag_ws);
     vec3 v = normalize(camera_pos - frag_ws);
     vec3 h = normalize(l + v);
@@ -97,6 +99,7 @@ void main (void) {
     vec3 color = BRDF * NdotL;
     color = pow(color, vec3(1.0/2.2));
 
-    frag_color = vec4(color, 1.0);
+    gAlbedo = vec4(color, 1.0);
+    // Store view-space normal in G-buffer
+    gNormal = normalize(vs_normal);
 }
-

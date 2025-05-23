@@ -5,6 +5,7 @@ layout (location = 1) in vec3 normal;
 layout (location = 2) in vec2 texCoord;
 
 out vec3 ws_normal;
+out vec3 vs_normal;  // View-space normal for G-buffer
 out vec3 frag_ws;
 
 uniform mat4 projection;
@@ -15,6 +16,7 @@ uniform mat3 normal_matrix;
 
 void main(void)  {
     ws_normal = normalize((transpose(inverse(model)) * vec4(normal, 0.f)).xyz);
-    vec3 frag_ws = (model * vec4(vert, 1.0)).xyz;
+    vs_normal = normalize(normal_matrix * normal);  // Transform normal to view space
+    frag_ws = (model * vec4(vert, 1.0)).xyz;
     gl_Position = projection * view * vec4(frag_ws, 1.0f);
 }

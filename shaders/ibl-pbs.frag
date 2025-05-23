@@ -1,6 +1,9 @@
 #version 330
 
-out vec4 frag_color;
+layout(location = 0) out vec4 gAlbedo;
+layout(location = 1) out vec3 gNormal;
+
+in vec3 vs_normal;
 uniform mat4 projection;
 uniform mat4 model;
 uniform mat4 view;
@@ -114,6 +117,6 @@ void main (void) {
     vec3 color = direct_illumination + ambient;
     color = pow(color, vec3(1.0/2.2));
 
-    frag_color = vec4(color, 1.0);
+    gAlbedo = vec4(color, 1.0);
+    gNormal = normalize(vs_normal);
 }
-

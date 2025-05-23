@@ -29,7 +29,6 @@ const std::vector<std::vector<std::string>> kShaderFiles = {
     {"../shaders/conv-shader.vert",  "../shaders/conv-shader.frag"},
     {"../shaders/prefilter.vert",    "../shaders/prefilter.frag"},
     {"../shaders/brdf-lut.vert",     "../shaders/brdf-lut.frag"},
-    {"../shaders/g-pass.vert",       "../shaders/g-pass.frag"},
     {"../shaders/ssao-pass.vert", "../shaders/ssao-pass.frag"},
     {"../shaders/blur-pass.vert", "../shaders/blur-pass.frag"},
     {"../shaders/shading-pass.vert", "../shaders/shading-pass.frag"},
@@ -157,13 +156,6 @@ bool GLWidget::LoadModel(const QString &filename) {
 
         // TODO(students): Create / Initialize buffers.
         //MESH: You need to create 1 VAO and 4 VBO
-        glGenVertexArrays(1, &VAO);
-
-        glGenBuffers(1, &VBO_v);
-        glGenBuffers(1, &VBO_n);
-        glGenBuffers(1, &VBO_tc);
-        glGenBuffers(1, &VBO_i);
-
         glBindVertexArray(VAO);
 
         glBindBuffer(GL_ARRAY_BUFFER, VBO_v);
@@ -187,14 +179,7 @@ bool GLWidget::LoadModel(const QString &filename) {
         glBindVertexArray(0);
 
 
-
-
         //SKY BOX: You need to create 1 VAO and 2 VBO:
-        glGenVertexArrays(1, &VAO_sky);
-
-        glGenBuffers(1, &VBO_v_sky);
-        glGenBuffers(1, &VBO_i_sky);
-
         skyVertices_ = {
             -1.f, -1.f, -1.f,
             +1.f, -1.f, -1.f,
@@ -298,10 +283,10 @@ void GLWidget::DrawFloor(){
 
     if (floorVAO == 0) {
         float vertexs[] = {
-            -4.0f, -1.0f, -4.0f,
-            4.0f, -1.0f, -4.0f,
-            4.0f, -1.0f,  4.0f,
-            -4.0f, -1.0f,  4.0f
+            -4.0f, 0.0f, -4.0f,
+            4.0f, 0.0f, -4.0f,
+            4.0f, 0.0f,  4.0f,
+            -4.0f, 0.0f,  4.0f
         };
 
         float normals[] = {
@@ -836,7 +821,6 @@ void GLWidget::initializeGL ()
     programs_.push_back(std::make_unique<QOpenGLShaderProgram>());//conv-shader
     programs_.push_back(std::make_unique<QOpenGLShaderProgram>());//prefilter-shader
     programs_.push_back(std::make_unique<QOpenGLShaderProgram>());//brdf-lut-shader
-    programs_.push_back(std::make_unique<QOpenGLShaderProgram>());//g-pass
     programs_.push_back(std::make_unique<QOpenGLShaderProgram>());//ssao-pass
     programs_.push_back(std::make_unique<QOpenGLShaderProgram>());//blur-pass
     programs_.push_back(std::make_unique<QOpenGLShaderProgram>());//shading-pass
@@ -855,13 +839,23 @@ void GLWidget::initializeGL ()
     res = res && LoadProgram(kShaderFiles[9][0],   kShaderFiles[9][1],    programs_[9].get());
     res = res && LoadProgram(kShaderFiles[10][0],   kShaderFiles[10][1],    programs_[10].get());
     res = res && LoadProgram(kShaderFiles[11][0],   kShaderFiles[11][1],    programs_[11].get());
-    res = res && LoadProgram(kShaderFiles[12][0],   kShaderFiles[12][1],    programs_[12].get());
 
 
 
 
 
     if (!res) exit(0);
+
+
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO_v);
+    glGenBuffers(1, &VBO_n);
+    glGenBuffers(1, &VBO_tc);
+    glGenBuffers(1, &VBO_i);
+
+    glGenVertexArrays(1, &VAO_sky);
+    glGenBuffers(1, &VBO_v_sky);
+    glGenBuffers(1, &VBO_i_sky);
 
     LoadModel(".null");//create an sphere
 
@@ -987,188 +981,25 @@ void GLWidget::paintGL ()
             using_roughness_map_location         = programs_[currentShader_]->uniformLocation("using_roughness_map");
             using_metalness_map_location         = programs_[currentShader_]->uniformLocation("using_metalness_map");
 
-            if(two_step_rendering){
-                //FIRST PASS
-                glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
-                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-                int g_pass_shader = 8;
-                programs_[g_pass_shader]->bind();
+            glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-                GLint projection_location, view_location, model_location,normal_matrix_location, color_map_location, using_color_map_location;
-                projection_location       = programs_[g_pass_shader]->uniformLocation("projection");
-                view_location             = programs_[g_pass_shader]->uniformLocation("view");
-                model_location            = programs_[g_pass_shader]->uniformLocation("model");
-                normal_matrix_location    = programs_[g_pass_shader]->uniformLocation("normal_matrix");
-                using_color_map_location  = programs_[g_pass_shader]->uniformLocation("using_color_map");
-                color_map_location        = programs_[g_pass_shader]->uniformLocation("color_map");
+            GLuint attachments[1] = { GL_COLOR_ATTACHMENT0 };
+            glDrawBuffers(1, attachments);
+            if(skyVisible_) {
+                glDepthMask(GL_FALSE);
 
-                glUniformMatrix4fv(projection_location, 1, GL_FALSE, &projection[0][0]);
-                glUniformMatrix4fv(view_location, 1, GL_FALSE, &view[0][0]);
-                glUniformMatrix4fv(model_location, 1, GL_FALSE, &model[0][0]);
-                glUniformMatrix3fv(normal_matrix_location, 1, GL_FALSE, &normal[0][0]);
-                glActiveTexture(GL_TEXTURE2);
-                glBindTexture(GL_TEXTURE_2D, color_map_);
-                glUniform1i(color_map_location, 2);
-                glUniform1i(using_color_map_location, using_color_map);
+                programs_[programs_.size()-1]->bind();
 
-                DrawFloor();
-
-                glBindVertexArray(VAO);
-                glDrawElements(GL_TRIANGLES, mesh_->faces_.size(), GL_UNSIGNED_INT, (GLvoid*)0);
-                glBindVertexArray(0);
-
-                //SECOND PASS
-                glBindFramebuffer(GL_FRAMEBUFFER, ssaoFBO);
-                glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-                glDisable(GL_DEPTH_TEST);
-                int ssao_pass_shader = 9;
-                programs_[ssao_pass_shader]->bind();
-
-                GLint gAlbedo_location, gNormal_location, gDepth_location, current_buffer_location, near_plane_location, far_plane_location,
-                    radius_location, n_samples_location, n_dirs_location, fov_location, width_location, height_location, ssao_improvements_location,
-                    ssao_texture_location;
-
-                gAlbedo_location = programs_[ssao_pass_shader]->uniformLocation("gAlbedo");
-                gNormal_location = programs_[ssao_pass_shader]->uniformLocation("gNormal");
-                gDepth_location = programs_[ssao_pass_shader]->uniformLocation("gDepth");
-                current_buffer_location = programs_[ssao_pass_shader]->uniformLocation("current_texture");
-                near_plane_location = programs_[ssao_pass_shader]->uniformLocation("near_plane");
-                far_plane_location = programs_[ssao_pass_shader]->uniformLocation("far_plane");
-                radius_location = programs_[ssao_pass_shader]->uniformLocation("radius");
-                n_samples_location = programs_[ssao_pass_shader]->uniformLocation("n_samples");
-                n_dirs_location = programs_[ssao_pass_shader]->uniformLocation("n_dirs");
-                fov_location = programs_[ssao_pass_shader]->uniformLocation("fov");
-                width_location = programs_[ssao_pass_shader]->uniformLocation("width");
-                height_location = programs_[ssao_pass_shader]->uniformLocation("height");
-                projection_location       = programs_[ssao_pass_shader]->uniformLocation("projection");
-                ssao_improvements_location = programs_[ssao_pass_shader]->uniformLocation("ssao_improvements");
-
-                glActiveTexture(GL_TEXTURE7);
-                glBindTexture(GL_TEXTURE_2D, gAlbedoTex);
-                glUniform1i(gAlbedo_location, 7);
-
-                glActiveTexture(GL_TEXTURE8);
-                glBindTexture(GL_TEXTURE_2D, gNormalTex);
-                glUniform1i(gNormal_location, 8);
-
-                glActiveTexture(GL_TEXTURE9);
-                glBindTexture(GL_TEXTURE_2D, gDepthTex);
-                glUniform1i(gDepth_location, 9);
-
-                glUniform1i(current_buffer_location, currentBuffer_);
-
-                glUniform1f(near_plane_location, kZNear);
-                glUniform1f(far_plane_location, kZFar);
-
-                glUniform1f(radius_location, radius);
-
-                glUniform1i(n_samples_location, n_samples);
-                glUniform1i(n_dirs_location, n_directions);
-
-                glUniform1f(width_location, width_);
-                glUniform1f(height_location, height_);
-
-                glUniform1f(fov_location, kFieldOfView);
-                glUniformMatrix4fv(projection_location, 1, GL_FALSE, &projection[0][0]);
-
-                glUniform1i(ssao_improvements_location, ssao_improvements);
+                projection_location     = programs_[programs_.size()-1]->uniformLocation("projection");
+                view_location           = programs_[programs_.size()-1]->uniformLocation("view");
+                model_location          = programs_[programs_.size()-1]->uniformLocation("model");
+                normal_matrix_location  = programs_[programs_.size()-1]->uniformLocation("normal_matrix");
+                specular_map_location   = programs_[programs_.size()-1]->uniformLocation("specular_map");
+                diffuse_map_location    = programs_[programs_.size()-1]->uniformLocation("diffuse_map");
 
 
-                DrawQuad();
-
-
-
-                //BLUR PASS
-                if(ssao_improvements){
-                    if(currentBuffer_ == 3){
-                        GLuint horizontal_location;
-
-                        int blur_shader = 10;
-                        programs_[blur_shader]->bind();
-
-                        ssao_texture_location = programs_[blur_shader]->uniformLocation("ssaoTex");
-                        width_location = programs_[blur_shader]->uniformLocation("width");
-                        height_location = programs_[blur_shader]->uniformLocation("height");
-                        horizontal_location = programs_[blur_shader]->uniformLocation("horizontal");
-
-
-                        glBindFramebuffer(GL_FRAMEBUFFER, blurFBO);
-                        glClear(GL_COLOR_BUFFER_BIT);
-
-                        glActiveTexture(GL_TEXTURE0);
-                        glBindTexture(GL_TEXTURE_2D, ssaoTex);
-                        glUniform1i(ssao_texture_location, 0);
-
-                        glUniform1f(width_location, width_);
-                        glUniform1f(height_location, height_);
-
-                        glUniform1i(horizontal_location, true);
-
-                        DrawQuad();  // Execute the horizontal blur pass
-
-                        glBindFramebuffer(GL_FRAMEBUFFER, ssaoFBO);
-                        glClear(GL_COLOR_BUFFER_BIT);
-
-                        glActiveTexture(GL_TEXTURE0);
-                        glBindTexture(GL_TEXTURE_2D, blurTex);
-                        glUniform1i(ssao_texture_location, 0);
-
-                        glUniform1i(horizontal_location, false);
-
-                        DrawQuad();
-                    }
-                }
-
-
-                //SHADING PASS
-                glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebufferObject());
-                int shading_pass_shader = 11;
-                programs_[shading_pass_shader]->bind();
-
-                GLuint shade_location;
-
-                ssao_texture_location = programs_[shading_pass_shader]->uniformLocation("ssaoTex");
-                shade_location = programs_[shading_pass_shader]->uniformLocation("shading");
-                gAlbedo_location = programs_[shading_pass_shader]->uniformLocation("albedo");
-                gNormal_location = programs_[shading_pass_shader]->uniformLocation("normal");
-                gDepth_location = programs_[ssao_pass_shader]->uniformLocation("gDepth");
-                near_plane_location = programs_[shading_pass_shader]->uniformLocation("near_plane");
-                far_plane_location = programs_[shading_pass_shader]->uniformLocation("far_plane");
-                fov_location = programs_[shading_pass_shader]->uniformLocation("fov");
-                width_location = programs_[shading_pass_shader]->uniformLocation("width");
-                height_location = programs_[shading_pass_shader]->uniformLocation("height");
-
-                glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, ssaoTex);
-                glUniform1i(ssao_texture_location, 0);
-
-                glActiveTexture(GL_TEXTURE1);
-                glBindTexture(GL_TEXTURE_2D, gAlbedoTex);
-                glUniform1i(gAlbedo_location, 1);
-
-                glActiveTexture(GL_TEXTURE2);
-                glBindTexture(GL_TEXTURE_2D, gNormalTex);
-                glUniform1i(gNormal_location, 2);
-
-                glActiveTexture(GL_TEXTURE3);
-                glBindTexture(GL_TEXTURE_2D, gDepthTex);
-                glUniform1i(gDepth_location, 3);
-
-
-                glUniform1f(fov_location, kFieldOfView);
-                glUniform1f(near_plane_location, kZNear);
-                glUniform1f(far_plane_location, kZFar);
-                glUniform1f(width_location, width_);
-                glUniform1f(height_location, height_);
-
-                glUniform1i(shade_location, currentBuffer_ == 4 ? true : false);
-
-                DrawQuad();
-
-            }
-            else{
                 glUniformMatrix4fv(projection_location, 1, GL_FALSE, &projection[0][0]);
                 glUniformMatrix4fv(view_location, 1, GL_FALSE, &view[0][0]);
                 glUniformMatrix4fv(model_location, 1, GL_FALSE, &model[0][0]);
@@ -1182,88 +1013,203 @@ void GLWidget::paintGL ()
                 glBindTexture(GL_TEXTURE_CUBE_MAP, diffuse_map_);
                 glUniform1i(diffuse_map_location, 1);
 
-                //TODO(students): active texture location for the following textures:
-                glActiveTexture(GL_TEXTURE2);
-                glBindTexture(GL_TEXTURE_2D, color_map_);
-                glUniform1i(color_map_location, 2);
-
-                glActiveTexture(GL_TEXTURE3);
-                glBindTexture(GL_TEXTURE_2D, roughness_map_);
-                glUniform1i(roughness_map_location, 3);
-
-                glActiveTexture(GL_TEXTURE4);
-                glBindTexture(GL_TEXTURE_2D, metalness_map_);
-                glUniform1i(metalness_map_location, 4);
-
                 glActiveTexture(GL_TEXTURE5);
                 glBindTexture(GL_TEXTURE_CUBE_MAP, prefiltered_map_);
                 glUniform1i(prefiltered_map_location, 5);
 
-                glActiveTexture(GL_TEXTURE6);
-                glBindTexture(GL_TEXTURE_2D, brdf_lut_);
-                glUniform1i(brdf_lut_location, 6);
-
-                //TODO END
-
-                glUniform1i(max_mips_location, num_mips);
-                glUniform1i(current_text_location, currentTexture_);
-                glUniform3f(fresnel_location, fresnel_[0], fresnel_[1], fresnel_[2]);
-                glUniform3f(light_location, 0, 2, 0);
-                glUniform1f(roughness_location, roughness_);
-                glUniform1f(metalness_location, metalness_);
-                glUniform1i(using_color_map_location, using_color_map);
-                glUniform1i(using_roughness_map_location, using_roughness_map);
-                glUniform1i(using_metalness_map_location, using_metalness_map);
-
-
-
-                // TODO(students): Implement draw call of the mesh
-                glBindVertexArray(VAO);
-                glDrawElements(GL_TRIANGLES, mesh_->faces_.size(), GL_UNSIGNED_INT, (GLvoid*)0);
+                glDepthFunc(GL_LEQUAL); //BECAUSE DEFAULT VALUE OF THE DEPTH BUFFER IS 1 SO WE HAVE TO ENSURE TO PAINT THE DEPTH BUFFER INDEPENDENTLY OF THE DEFAULT VALUE
+                // TODO(students): implement the draw call of the sky box
+                glBindVertexArray(VAO_sky);
+                glDrawElements(GL_TRIANGLES, skyFaces_.size(), GL_UNSIGNED_INT, (GLvoid*)0);
                 glBindVertexArray(0);
                 // TODO END.
+                glDepthFunc(GL_LESS);
+                glDepthMask(GL_TRUE);
+
+            }
+
+            GLuint attachments2[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+            glDrawBuffers(2, attachments2);
+
+            glUniformMatrix4fv(projection_location, 1, GL_FALSE, &projection[0][0]);
+            glUniformMatrix4fv(view_location, 1, GL_FALSE, &view[0][0]);
+            glUniformMatrix4fv(model_location, 1, GL_FALSE, &model[0][0]);
+            glUniformMatrix3fv(normal_matrix_location, 1, GL_FALSE, &normal[0][0]);
+
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, specular_map_);
+            glUniform1i(specular_map_location, 0);
+
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, diffuse_map_);
+            glUniform1i(diffuse_map_location, 1);
+
+            //TODO(students): active texture location for the following textures:
+            glActiveTexture(GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_2D, color_map_);
+            glUniform1i(color_map_location, 2);
+
+            glActiveTexture(GL_TEXTURE3);
+            glBindTexture(GL_TEXTURE_2D, roughness_map_);
+            glUniform1i(roughness_map_location, 3);
+
+            glActiveTexture(GL_TEXTURE4);
+            glBindTexture(GL_TEXTURE_2D, metalness_map_);
+            glUniform1i(metalness_map_location, 4);
+
+            glActiveTexture(GL_TEXTURE5);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, prefiltered_map_);
+            glUniform1i(prefiltered_map_location, 5);
+
+            glActiveTexture(GL_TEXTURE6);
+            glBindTexture(GL_TEXTURE_2D, brdf_lut_);
+            glUniform1i(brdf_lut_location, 6);
+
+            //TODO END
+
+            glUniform1i(max_mips_location, num_mips);
+            glUniform1i(current_text_location, currentTexture_);
+            glUniform3f(fresnel_location, fresnel_[0], fresnel_[1], fresnel_[2]);
+            glUniform3f(light_location, 0, 2, 0);
+            glUniform1f(roughness_location, roughness_);
+            glUniform1f(metalness_location, metalness_);
+            glUniform1i(using_color_map_location, using_color_map);
+            glUniform1i(using_roughness_map_location, using_roughness_map);
+            glUniform1i(using_metalness_map_location, using_metalness_map);
+
+            // TODO(students): Implement draw call of the mesh
+            glBindVertexArray(VAO);
+            glDrawElements(GL_TRIANGLES, mesh_->faces_.size(), GL_UNSIGNED_INT, (GLvoid*)0);
+            glBindVertexArray(0);
 
 
-                //SKY-----------------------------------------------------------------------------------------
-                if(skyVisible_) {
-                    //model = camera_.SetIdentity();
 
-                    programs_[programs_.size()-1]->bind();
+            glBindFramebuffer(GL_FRAMEBUFFER, ssaoFBO);
+            glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glDisable(GL_DEPTH_TEST);
+            int ssao_pass_shader = 8;
+            programs_[ssao_pass_shader]->bind();
 
-                    projection_location     = programs_[programs_.size()-1]->uniformLocation("projection");
-                    view_location           = programs_[programs_.size()-1]->uniformLocation("view");
-                    model_location          = programs_[programs_.size()-1]->uniformLocation("model");
-                    normal_matrix_location  = programs_[programs_.size()-1]->uniformLocation("normal_matrix");
-                    specular_map_location   = programs_[programs_.size()-1]->uniformLocation("specular_map");
-                    diffuse_map_location   = programs_[programs_.size()-1]->uniformLocation("diffuse_map");
+            GLint gAlbedo_location, gNormal_location, gDepth_location, current_buffer_location, near_plane_location, far_plane_location,
+                radius_location, n_samples_location, n_dirs_location, fov_location, width_location, height_location, ssao_improvements_location,
+                ssao_texture_location;
+
+            gAlbedo_location = programs_[ssao_pass_shader]->uniformLocation("gAlbedo");
+            gNormal_location = programs_[ssao_pass_shader]->uniformLocation("gNormal");
+            gDepth_location = programs_[ssao_pass_shader]->uniformLocation("gDepth");
+            current_buffer_location = programs_[ssao_pass_shader]->uniformLocation("current_texture");
+            near_plane_location = programs_[ssao_pass_shader]->uniformLocation("near_plane");
+            far_plane_location = programs_[ssao_pass_shader]->uniformLocation("far_plane");
+            radius_location = programs_[ssao_pass_shader]->uniformLocation("radius");
+            n_samples_location = programs_[ssao_pass_shader]->uniformLocation("n_samples");
+            n_dirs_location = programs_[ssao_pass_shader]->uniformLocation("n_dirs");
+            fov_location = programs_[ssao_pass_shader]->uniformLocation("fov");
+            width_location = programs_[ssao_pass_shader]->uniformLocation("width");
+            height_location = programs_[ssao_pass_shader]->uniformLocation("height");
+            projection_location       = programs_[ssao_pass_shader]->uniformLocation("projection");
+            ssao_improvements_location = programs_[ssao_pass_shader]->uniformLocation("ssao_improvements");
+
+            glActiveTexture(GL_TEXTURE7);
+            glBindTexture(GL_TEXTURE_2D, gAlbedoTex);
+            glUniform1i(gAlbedo_location, 7);
+
+            glActiveTexture(GL_TEXTURE8);
+            glBindTexture(GL_TEXTURE_2D, gNormalTex);
+            glUniform1i(gNormal_location, 8);
+
+            glActiveTexture(GL_TEXTURE9);
+            glBindTexture(GL_TEXTURE_2D, gDepthTex);
+            glUniform1i(gDepth_location, 9);
+
+            glUniform1i(current_buffer_location, currentBuffer_);
+
+            glUniform1f(near_plane_location, kZNear);
+            glUniform1f(far_plane_location, kZFar);
+
+            glUniform1f(radius_location, radius);
+
+            glUniform1i(n_samples_location, n_samples);
+            glUniform1i(n_dirs_location, n_directions);
+
+            glUniform1f(width_location, width_);
+            glUniform1f(height_location, height_);
+
+            glUniform1f(fov_location, kFieldOfView);
+            glUniformMatrix4fv(projection_location, 1, GL_FALSE, &projection[0][0]);
+
+            glUniform1i(ssao_improvements_location, ssao_improvements);
 
 
-                    glUniformMatrix4fv(projection_location, 1, GL_FALSE, &projection[0][0]);
-                    glUniformMatrix4fv(view_location, 1, GL_FALSE, &view[0][0]);
-                    glUniformMatrix4fv(model_location, 1, GL_FALSE, &model[0][0]);
-                    glUniformMatrix3fv(normal_matrix_location, 1, GL_FALSE, &normal[0][0]);
+            DrawQuad();
+
+
+
+            //BLUR PASS
+            if(ssao_improvements){
+                if(currentBuffer_ == 3){
+                    GLuint horizontal_location;
+
+                    int blur_shader = 9;
+                    programs_[blur_shader]->bind();
+
+                    ssao_texture_location = programs_[blur_shader]->uniformLocation("ssaoTex");
+                    width_location = programs_[blur_shader]->uniformLocation("width");
+                    height_location = programs_[blur_shader]->uniformLocation("height");
+                    horizontal_location = programs_[blur_shader]->uniformLocation("horizontal");
+
+
+                    glBindFramebuffer(GL_FRAMEBUFFER, blurFBO);
+                    glClear(GL_COLOR_BUFFER_BIT);
 
                     glActiveTexture(GL_TEXTURE0);
-                    glBindTexture(GL_TEXTURE_CUBE_MAP, specular_map_);
-                    glUniform1i(specular_map_location, 0);
+                    glBindTexture(GL_TEXTURE_2D, ssaoTex);
+                    glUniform1i(ssao_texture_location, 0);
 
-                    glActiveTexture(GL_TEXTURE1);
-                    glBindTexture(GL_TEXTURE_CUBE_MAP, diffuse_map_);
-                    glUniform1i(diffuse_map_location, 1);
+                    glUniform1f(width_location, width_);
+                    glUniform1f(height_location, height_);
 
-                    glActiveTexture(GL_TEXTURE5);
-                    glBindTexture(GL_TEXTURE_CUBE_MAP, prefiltered_map_);
-                    glUniform1i(prefiltered_map_location, 5);
+                    glUniform1i(horizontal_location, true);
 
-                    glDepthFunc(GL_LEQUAL); //BECAUSE DEFAULT VALUE OF THE DEPTH BUFFER IS 1 SO WE HAVE TO ENSURE TO PAINT THE DEPTH BUFFER INDEPENDENTLY OF THE DEFAULT VALUE
-                    // TODO(students): implement the draw call of the sky box
-                    glBindVertexArray(VAO_sky);
-                    glDrawElements(GL_TRIANGLES, skyFaces_.size(), GL_UNSIGNED_INT, (GLvoid*)0);
-                    glBindVertexArray(0);
-                    // TODO END.
-                    glDepthFunc(GL_LESS);
+                    DrawQuad();  // Execute the horizontal blur pass
+
+                    glBindFramebuffer(GL_FRAMEBUFFER, ssaoFBO);
+                    glClear(GL_COLOR_BUFFER_BIT);
+
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(GL_TEXTURE_2D, blurTex);
+                    glUniform1i(ssao_texture_location, 0);
+
+                    glUniform1i(horizontal_location, false);
+
+                    DrawQuad();
                 }
             }
+
+
+            //SHADING PASS
+            glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebufferObject());
+            int shading_pass_shader = 10;
+            programs_[shading_pass_shader]->bind();
+
+            GLuint shade_location;
+
+            ssao_texture_location = programs_[shading_pass_shader]->uniformLocation("ssaoTex");
+            shade_location = programs_[shading_pass_shader]->uniformLocation("shading");
+            gAlbedo_location = programs_[shading_pass_shader]->uniformLocation("albedo");
+
+
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, ssaoTex);
+            glUniform1i(ssao_texture_location, 0);
+
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, gAlbedoTex);
+            glUniform1i(gAlbedo_location, 1);
+
+            glUniform1i(shade_location, currentBuffer_ == 4 ? true : false);
+
+            DrawQuad();
         }
     }
 }
