@@ -958,7 +958,49 @@ void GLWidget::paintGL ()
             //MESH-----------------------------------------------------------------------------------------
             //general shader setting
 
+            glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            GLuint attachments[1] = { GL_COLOR_ATTACHMENT0 };
+            glDrawBuffers(1, attachments);
+            if(skyVisible_) {
+                glDepthMask(GL_FALSE);
+
+                programs_[programs_.size()-1]->bind();
+
+                projection_location     = programs_[programs_.size()-1]->uniformLocation("projection");
+                view_location           = programs_[programs_.size()-1]->uniformLocation("view");
+                model_location          = programs_[programs_.size()-1]->uniformLocation("model");
+                normal_matrix_location  = programs_[programs_.size()-1]->uniformLocation("normal_matrix");
+                specular_map_location   = programs_[programs_.size()-1]->uniformLocation("specular_map");
+
+
+                glUniformMatrix4fv(projection_location, 1, GL_FALSE, &projection[0][0]);
+                glUniformMatrix4fv(view_location, 1, GL_FALSE, &view[0][0]);
+                glUniformMatrix4fv(model_location, 1, GL_FALSE, &model[0][0]);
+                glUniformMatrix3fv(normal_matrix_location, 1, GL_FALSE, &normal[0][0]);
+
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_CUBE_MAP, specular_map_);
+                glUniform1i(specular_map_location, 0);
+
+                GLint depthFunc;
+                glGetIntegerv(GL_DEPTH_FUNC, &depthFunc);
+                
+                glDepthFunc(GL_LEQUAL);
+                glBindVertexArray(VAO_sky);
+                glDrawElements(GL_TRIANGLES, skyFaces_.size(), GL_UNSIGNED_INT, (GLvoid*)0);
+                glBindVertexArray(0);
+                
+                glDepthFunc(depthFunc);
+                glDepthMask(GL_TRUE);
+
+            }
+
             programs_[currentShader_]->bind();
+
+            GLuint attachments2[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+            glDrawBuffers(2, attachments2);
 
             projection_location       = programs_[currentShader_]->uniformLocation("projection");
             view_location             = programs_[currentShader_]->uniformLocation("view");
@@ -980,56 +1022,6 @@ void GLWidget::paintGL ()
             using_color_map_location         = programs_[currentShader_]->uniformLocation("using_color_map");
             using_roughness_map_location         = programs_[currentShader_]->uniformLocation("using_roughness_map");
             using_metalness_map_location         = programs_[currentShader_]->uniformLocation("using_metalness_map");
-
-
-            glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-            GLuint attachments[1] = { GL_COLOR_ATTACHMENT0 };
-            glDrawBuffers(1, attachments);
-            if(skyVisible_) {
-                glDepthMask(GL_FALSE);
-
-                programs_[programs_.size()-1]->bind();
-
-                projection_location     = programs_[programs_.size()-1]->uniformLocation("projection");
-                view_location           = programs_[programs_.size()-1]->uniformLocation("view");
-                model_location          = programs_[programs_.size()-1]->uniformLocation("model");
-                normal_matrix_location  = programs_[programs_.size()-1]->uniformLocation("normal_matrix");
-                specular_map_location   = programs_[programs_.size()-1]->uniformLocation("specular_map");
-                diffuse_map_location    = programs_[programs_.size()-1]->uniformLocation("diffuse_map");
-
-
-                glUniformMatrix4fv(projection_location, 1, GL_FALSE, &projection[0][0]);
-                glUniformMatrix4fv(view_location, 1, GL_FALSE, &view[0][0]);
-                glUniformMatrix4fv(model_location, 1, GL_FALSE, &model[0][0]);
-                glUniformMatrix3fv(normal_matrix_location, 1, GL_FALSE, &normal[0][0]);
-
-                glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_CUBE_MAP, specular_map_);
-                glUniform1i(specular_map_location, 0);
-
-                glActiveTexture(GL_TEXTURE1);
-                glBindTexture(GL_TEXTURE_CUBE_MAP, diffuse_map_);
-                glUniform1i(diffuse_map_location, 1);
-
-                glActiveTexture(GL_TEXTURE5);
-                glBindTexture(GL_TEXTURE_CUBE_MAP, prefiltered_map_);
-                glUniform1i(prefiltered_map_location, 5);
-
-                glDepthFunc(GL_LEQUAL); //BECAUSE DEFAULT VALUE OF THE DEPTH BUFFER IS 1 SO WE HAVE TO ENSURE TO PAINT THE DEPTH BUFFER INDEPENDENTLY OF THE DEFAULT VALUE
-                // TODO(students): implement the draw call of the sky box
-                glBindVertexArray(VAO_sky);
-                glDrawElements(GL_TRIANGLES, skyFaces_.size(), GL_UNSIGNED_INT, (GLvoid*)0);
-                glBindVertexArray(0);
-                // TODO END.
-                glDepthFunc(GL_LESS);
-                glDepthMask(GL_TRUE);
-
-            }
-
-            GLuint attachments2[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-            glDrawBuffers(2, attachments2);
 
             glUniformMatrix4fv(projection_location, 1, GL_FALSE, &projection[0][0]);
             glUniformMatrix4fv(view_location, 1, GL_FALSE, &view[0][0]);
@@ -1144,7 +1136,6 @@ void GLWidget::paintGL ()
             DrawQuad();
 
 
-
             //BLUR PASS
             if(ssao_improvements){
                 if(currentBuffer_ == 3){
@@ -1171,7 +1162,7 @@ void GLWidget::paintGL ()
 
                     glUniform1i(horizontal_location, true);
 
-                    DrawQuad();  // Execute the horizontal blur pass
+                    DrawQuad();
 
                     glBindFramebuffer(GL_FRAMEBUFFER, ssaoFBO);
                     glClear(GL_COLOR_BUFFER_BIT);
