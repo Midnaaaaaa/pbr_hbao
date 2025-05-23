@@ -518,60 +518,6 @@ void GLWidget::GenerateIrradianceAndPrefilteredMaps(const int cubemap_width, con
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    //--------------------------DRAW CALL FOR BRDF LUT ------------------------------------
-    glBindTexture(GL_TEXTURE_2D, brdf_lut_);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, 1024, 1024, 0, GL_RG, GL_FLOAT, 0);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-
-    glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
-    glBindRenderbuffer(GL_RENDERBUFFER, captureRBO);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 1024, 1024);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, brdf_lut_, 0);
-
-    glViewport(0, 0, 1024, 1024);
-
-    int brdf_lut_shader = 7;
-    programs_[brdf_lut_shader]->bind();
-
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    DrawQuad();
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-
-    glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
-
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, brdf_lut_, 0);
-    glReadBuffer(GL_COLOR_ATTACHMENT0);
-
-    std::vector<float> data(1024 * 1024 * 2); // 2 componentes: R y G
-    glReadPixels(0, 0, 1024, 1024, GL_RG, GL_FLOAT, data.data());
-
-    QImage img(1024, 1024, QImage::Format_RGB32);
-    for (int y = 0; y < 1024; ++y) {
-        for (int x = 0; x < 1024; ++x) {
-            int idx = ((1024 - 1 - y) * 1024 + x) * 2;
-            float r = data[idx];
-            float g = data[idx + 1];
-            QColor color(
-                int(std::clamp(r, 0.0f, 1.0f) * 255.0f),
-                int(std::clamp(g, 0.0f, 1.0f) * 255.0f),
-                0 // B = 0
-                );
-            img.setPixelColor(x, y, color);
-        }
-    }
-
-    img.save("../output_irradiance/brdf-lut.png");
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-
-
-
     glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
 
     for (int mip = 0; mip < mip_levels; ++mip) {
@@ -788,6 +734,62 @@ void GLWidget::initializeBlurTex(){
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
+void GLWidget::GenerateBRDF_LUT(){
+    GLuint captureFBO, captureRBO;
+    glGenFramebuffers(1, &captureFBO);
+    glGenRenderbuffers(1, &captureRBO);
+
+    glBindTexture(GL_TEXTURE_2D, brdf_lut_);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, 1024, 1024, 0, GL_RG, GL_FLOAT, 0);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+
+    glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
+    glBindRenderbuffer(GL_RENDERBUFFER, captureRBO);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 1024, 1024);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, brdf_lut_, 0);
+
+    glViewport(0, 0, 1024, 1024);
+
+    int brdf_lut_shader = 7;
+    programs_[brdf_lut_shader]->bind();
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    DrawQuad();
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
+    glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
+
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, brdf_lut_, 0);
+    glReadBuffer(GL_COLOR_ATTACHMENT0);
+
+    std::vector<float> data(1024 * 1024 * 2); // 2 componentes: R y G
+    glReadPixels(0, 0, 1024, 1024, GL_RG, GL_FLOAT, data.data());
+
+    QImage img(1024, 1024, QImage::Format_RGB32);
+    for (int y = 0; y < 1024; ++y) {
+        for (int x = 0; x < 1024; ++x) {
+            int idx = ((1024 - 1 - y) * 1024 + x) * 2;
+            float r = data[idx];
+            float g = data[idx + 1];
+            QColor color(
+                int(std::clamp(r, 0.0f, 1.0f) * 255.0f),
+                int(std::clamp(g, 0.0f, 1.0f) * 255.0f),
+                0 // B = 0
+                );
+            img.setPixelColor(x, y, color);
+        }
+    }
+
+    img.save("../output_irradiance/brdf-lut.png");
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
 
 void GLWidget::initializeGL ()
 {
@@ -842,7 +844,7 @@ void GLWidget::initializeGL ()
 
 
 
-
+    GenerateBRDF_LUT();
 
     if (!res) exit(0);
 

@@ -85,6 +85,7 @@ class GLWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_3_Core {
   void DrawFloor();
   void initializeSSAOTex();
   void initializeBlurTex();
+  void GenerateBRDF_LUT();
 
 
  protected:
