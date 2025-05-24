@@ -251,7 +251,7 @@ public:
 
         dspin_rough_2 = new QDoubleSpinBox(horizontalLayoutWidget_3);
         dspin_rough_2->setObjectName("dspin_rough_2");
-        dspin_rough_2->setMaximum(1.000000000000000);
+        dspin_rough_2->setMaximum(10.000000000000000);
         dspin_rough_2->setSingleStep(0.050000000000000);
         dspin_rough_2->setValue(0.500000000000000);
 
