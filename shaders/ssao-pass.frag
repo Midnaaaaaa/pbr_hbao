@@ -85,54 +85,59 @@ void main()
     }
     else{
         vec3 viewPos = GetEyeSpacePos(uvs);
-        vec3 viewNormal = normalize(texture(gNormal, uvs).xyz);
+        vec3 viewNormal = texture(gNormal, uvs).xyz;
+
+        vec3 viewTangent = GetTangent(viewNormal);
+        vec3 viewBitangent = GetBitangent(viewNormal, viewTangent);
+
 
         float randomAngle = 0;
         float bias = 0;
-        if(ssao_improvements) {
-            randomAngle = random(uvs * 1000) * 2.0 * PI;
-            float bias = (3.141592/360)*30.f;
+        if(ssao_improvements){
+            randomAngle = random(uvs) * 2.0 * PI;
+            bias = (3.141592/360)*40.f;
         }
-
-        vec4 radiusClip = projection * vec4(viewPos + vec3(radius,0,0), 1);
-        vec2 radiusScreen = (radiusClip.xy / radiusClip.w) * 0.5 + 0.5;
-
-        float projectedRadius = abs(radiusScreen.x - uvs.x);
 
         float ao = 0.0;
         for (int i = 0; i < n_dirs; i++) {
             float angle = float(i) * (2.0 * PI / float(n_dirs)) + randomAngle;
-            vec2 screenDir = normalize(vec2(cos(angle), sin(angle)));
-            vec3 viewDir = vec3(screenDir,0);
-            vec3 tangent = viewDir - viewNormal * dot(viewNormal, viewDir);
-            float tangentAngle = atan(tangent.z, length(tangent.xy));
+            vec2 dir2D = vec2(cos(angle), sin(angle));
+            vec3 dir3D = normalize(viewTangent * dir2D.x + viewBitangent * dir2D.y);
+
+            vec3 leftDirection = cross(normalize(viewPos), vec3(dir3D));
+            vec3 projectedNormal = normalize(viewNormal - dot(leftDirection, viewNormal) * leftDirection);
+
+            vec3 tangent = cross(projectedNormal, leftDirection);
+            float tangentAngle = atan(tangent.z / length(tangent.xy));
 
             float maxHorizonAngle = tangentAngle;
-            float horizonDist = 0;
 
             for (int j = 1; j <= n_samples; j++) {
-                float t = projectedRadius * float(j) / float(n_samples);
-                vec2 sampleUVS = uvs + screenDir * t;
+                float t = float(j) / float(n_samples);
 
-                if (any(lessThan(sampleUVS, vec2(0.0))) || any(greaterThan(sampleUVS, vec2(1.0))))
+                vec3 samplePointView = viewPos + dir3D * radius * t;
+                vec4 samplePointClip = projection * vec4(samplePointView, 1.0);
+                vec2 sampleUV = (samplePointClip.xy / samplePointClip.w) * 0.5 + 0.5;
+
+                if (any(lessThan(sampleUV, vec2(0.0))) || any(greaterThan(sampleUV, vec2(1.0))))
                     continue;
 
-                vec3 samplePos = GetEyeSpacePos(sampleUVS);
+                vec3 samplePos = GetEyeSpacePos(sampleUV);
 
                 vec3 v = samplePos - viewPos;
                 float dist = length(v);
 
-                if (dist < radius){
-                    float horizonAngle = atan(v.z / length(v.xy));
-                    if (horizonAngle > maxHorizonAngle) {
-                        maxHorizonAngle = horizonAngle;
-                        horizonDist = dist;
-                    }
+                if (dist > radius)
+                    continue;
+
+                float angleToSample = atan(v.z / length(v.xy));
+
+                if (angleToSample > maxHorizonAngle) {
+                    maxHorizonAngle = angleToSample;
                 }
             }
 
-            float aoContribution = sin(maxHorizonAngle) - sin(tangentAngle + bias);
-            ao += aoContribution;
+            ao += sin(maxHorizonAngle) - sin(tangentAngle + bias);
         }
         ao = 1.0 - ao / float(n_dirs);
 
