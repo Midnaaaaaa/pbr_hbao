@@ -53,7 +53,7 @@ void main (void) {
 
     float metalness_val = metalness;
     float roughness_val = roughness;
-    vec3 albedo = vec3(1,1,1);
+    vec3 albedo = vec3(1,0.4,0);
 
     if(using_color_map == 1){
         albedo = texture(color_map, uvs).rgb;
