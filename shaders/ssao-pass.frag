@@ -80,7 +80,7 @@ void main()
     }
     else if (current_texture == 2){
         float depth = texture(gDepth, uvs).r;
-        float linearDepth = LinearizeDepth(depth) / far_plane;
+        float linearDepth = LinearizeDepth(depth) / 2;
         texColor = vec4(vec3(linearDepth), 1.0);
     }
     else{
