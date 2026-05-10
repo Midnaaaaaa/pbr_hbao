@@ -8,7 +8,7 @@ Real-time rendering project developed in OpenGL featuring physically based rende
 
 ### Renderer Demo
 
-[![Watch the video](https://img.youtube.com/vi/reN-rrXhxTQ&t/maxresdefault.jpg)](https://www.youtube.com/watch?v=reN-rrXhxTQ&t=4s)
+[![Watch the video](https://img.youtube.com/vi/reN-rrXhxTQ/maxresdefault.jpg)](https://www.youtube.com/watch?v=reN-rrXhxTQ)
 
 ---
 
